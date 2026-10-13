@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>agent-helper — agent-helper</title><meta name="description" content="دستیار هوشمند افزونه‌پذیر برای Django: LLM با ابزار، مسیر سریع بدون LLM و اقدام‌هایی که فقط کاربر اجرا می‌کند"><link rel="stylesheet" href="style.css"></head>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
+<div class="wrap"><nav class="side"><h4>شروع</h4><a class="on" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
+<main><div class="crumb">شروع</div><h1><bdi dir="ltr">agent-helper</bdi></h1><p class="lead">دستیار هوشمند افزونه‌پذیر برای <bdi dir="ltr">Django: LLM</bdi> با ابزار، مسیر سریع بدون <bdi dir="ltr">LLM</bdi> و اقدام‌هایی که فقط کاربر اجرا می‌کند</p>
+<p><b><bdi dir="ltr">agent-helper</bdi></b> یک اپ <bdi dir="ltr">Django</bdi> برای ساختن دستیار گفتگومحور روی داده‌های سامانه‌ی خودتان است. هسته‌ی آن هیچ دامنه‌ای
+را نمی‌شناسد؛ هر کاربرد (سفارش، یادداشت، درخواست‌های اداری، …) یک <b>افزونه</b> است که ابزارها، اقدام‌ها و قواعد خودش را ثبت می‌کند.</p>
+<div class="cards">
+<a href="tutorial.html"><b>🚀 شروع سریع</b><span>از یک پروژه‌ی خالی <bdi dir="ltr">Django</bdi> تا اولین گفتگو در ۱۰ دقیقه</span></a>
+<a href="plugins.html"><b>🧩 نوشتن افزونه</b><span>ابزار، اقدام معلق، مسیر سریع و قاعده‌ی پرامپت</span></a>
+<a href="http-api.html"><b>📡 <bdi dir="ltr">API</bdi> و <bdi dir="ltr">SSE</bdi></b><span><bdi dir="ltr">endpoint</bdi>ها، رویدادها و نمونه‌ی درخواست و پاسخ</span></a>
+<a href="security.html"><b>🛡️ مدل امنیتی</b><span>چرا مدل هیچ‌وقت خودش چیزی را اجرا نمی‌کند</span></a>
+</div>
+<h2 id="چه-چیزی-آماده-است">چه چیزی آماده است<a class="anchor" href="#چه-چیزی-آماده-است">#</a></h2>
+<ul>
+<li><b>حلقه‌ی عامل با ابزار</b> روی هر سرور سازگار با <bdi dir="ltr">OpenAI</bdi> (<bdi dir="ltr">vLLM</bdi>، <bdi dir="ltr">llama.cpp</bdi>، …) یا <bdi dir="ltr">Anthropic</bdi>؛ حداکثر ۶ دور.</li>
+<li><b>مسیر سریع بدون <bdi dir="ltr">LLM:</bdi></b> <bdi dir="ltr">regex</bdi> و یک فراخوانی مدل سبک (<bdi dir="ltr">Jev</bdi> یا مدل لوکال با <bdi dir="ltr">logprobs</bdi>) برای پیام‌های پرتکرار؛ هر تردید ⇐ <bdi dir="ltr">LLM.</bdi></li>
+<li><b>اقدام معلق:</b> مدل فقط «پیشنهاد» می‌سازد؛ اجرا فقط با دکمه‌ی کاربر، با قفل، مهلت، <bdi dir="ltr">idempotent</bdi> و ممیزی.</li>
+<li><b>استریم <bdi dir="ltr">SSE</bdi></b> برای متن، وضعیت ابزار، کارت‌ها و خطا.</li>
+<li><b>پیوست تصویر</b> (مثلاً فاکتور) با مدل بینایی و کنترل حسابی.</li>
+<li><b>لاگ کامل:</b> هر پیام، هر فراخوانی مدل و هر ابزار با زمان و توکن؛ ادمین آماده.</li>
+<li><b>کاهش توکن:</b> فقط ابزارها و قاعده‌های مرتبط با پیام به مدل داده می‌شود.</li>
+<li><b>سقف نرخ</b> دقیقه‌ای و روزانه برای هر کاربر.</li>
+<li><b>آفلاین:</b> هیچ نشانی پیش‌فرضی به اینترنت اشاره نمی‌کند؛ همه‌چیز با <bdi dir="ltr">URL</bdi> قابل تنظیم است.</li>
+</ul>
+<h2 id="یک-نگاه-سریع">یک نگاه سریع<a class="anchor" href="#یک-نگاه-سریع">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># myplugin/plugin.py</span>
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> Plugin, ToolSpec
+
+<span class="tk-k">def</span> list_orders(user, args, ctx):
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;orders&#x27;</span>: [{<span class="tk-s">&#x27;id&#x27;</span>: o.id, <span class="tk-s">&#x27;total&#x27;</span>: o.total} <span class="tk-k">for</span> o <span class="tk-k">in</span> user.orders.all()[:20]]}
+
+PLUGIN = Plugin(name=<span class="tk-s">&#x27;orders&#x27;</span>, tools=[
+    ToolSpec(<span class="tk-s">&#x27;list_orders&#x27;</span>, <span class="tk-s">&#x27;فهرست سفارش‌های کاربر&#x27;</span>, {<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;properties&#x27;</span>: {}}, list_orders),
+])</code></pre></div>
+<p>کاربر می‌نویسد «سفارش‌هایم را نشان بده»، مدل ابزار <code>list_orders</code> را صدا می‌زند (همیشه برای <code>request.user</code>) و پاسخ به‌صورت <bdi dir="ltr">SSE</bdi> به رابط کاربری می‌رسد.</p>
+<h2 id="پکیج-ها">پکیج‌ها<a class="anchor" href="#پکیج-ها">#</a></h2>
+<table><thead><tr><th>پکیج</th><th>نقش</th></tr></thead><tbody><tr><td><code>agent-helper</code></td><td>هسته (همین مستندات)</td></tr><tr><td><code>agent-helper-demo</code></td><td>افزونه‌ی نمونه‌ی «یادداشت و مرخصی» و پروژه‌ی مستقل؛ بهترین نقطه‌ی شروع برای خواندن کد</td></tr></tbody></table>
+<h2 id="نیازمندی-ها">نیازمندی‌ها<a class="anchor" href="#نیازمندی-ها">#</a></h2>
+<ul><li><bdi dir="ltr">Python</bdi> ≥ 3.10، <bdi dir="ltr">Django</bdi> ≥ 4.2، <bdi dir="ltr">Django REST framework</bdi> ≥ 3.14</li><li><bdi dir="ltr">django-jalali</bdi> و <bdi dir="ltr">jdatetime</bdi> (تاریخ‌های شمسی)، <bdi dir="ltr">requests</bdi></li>
+<li>یک سرور مدل زبانی با پشتیبانی <bdi dir="ltr">tool calling</bdi> (برای مسیر <bdi dir="ltr">LLM</bdi>)</li><li>اختیاری: <bdi dir="ltr">Jev</bdi> یا یک مدل لوکال با <bdi dir="ltr">logprobs</bdi> برای مسیر سریع؛ مدل بینایی برای پیوست تصویر</li></ul>
+
+<div class="pn"><span></span><a href="installation.html"><small>بعدی</small>نصب ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#چه-چیزی-آماده-است">چه چیزی آماده است</a><a class="h2" href="#یک-نگاه-سریع">یک نگاه سریع</a><a class="h2" href="#پکیج-ها">پکیج‌ها</a><a class="h2" href="#نیازمندی-ها">نیازمندی‌ها</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

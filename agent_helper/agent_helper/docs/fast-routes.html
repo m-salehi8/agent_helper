@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مسیر سریع و Jev — agent-helper</title><meta name="description" content="پاسخ بدون LLM برای پیام‌های پرتکرار؛ دروازه‌ها، مسیرهای اصلی و کاتالوگ"><link rel="stylesheet" href="style.css"></head>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
+<div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="on" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
+<main><div class="crumb">راهنما</div><h1>مسیر سریع و <bdi dir="ltr">Jev</bdi></h1><p class="lead">پاسخ بدون <bdi dir="ltr">LLM</bdi> برای پیام‌های پرتکرار؛ دروازه‌ها، مسیرهای اصلی و کاتالوگ</p>
+<p>پیام‌های پرتکرار و ساده («سلام»، «سفارش‌هایم»، «چند روز مرخصی دارم؟») لازم نیست به <bdi dir="ltr">LLM</bdi> بروند. مسیر سریع با
+<bdi dir="ltr">regex</bdi> و یک فراخوانی مدل سبک تصمیم می‌گیرد و ابزار را مستقیم اجرا می‌کند. فقط وقتی همه‌ی سیگنال‌ها مطمئن‌اند.</p>
+<div class="adm note"><b class="t">روشن کردن</b><p><code>AGENT_HELPER['USE_FAST_ROUTER'] = '1'</code> (یا <code>ASSISTANT_USE_FAST_ROUTER=1</code>). خاموش ⇐ همه‌ی پیام‌ها به <bdi dir="ltr">LLM.</bdi></p></div>
+<h2 id="ترتیب-تصمیم">ترتیب تصمیم<a class="anchor" href="#ترتیب-تصمیم">#</a></h2>
+<ol>
+<li>گفتگو در حالتی است (<code>conversation.mode</code>) ⇐ <bdi dir="ltr">LLM</bdi> (دلیل: <code>&lt;mode&gt;_dialog</code>).</li>
+<li>مسیرهای دروازه به ترتیب <code>order</code>: اگر <code>guard(text)</code> درست بود ⇐ همان مسیر، بدون مدل سبک.</li>
+<li>یک فراخوانی مدل سبک با همه‌ی سؤال‌ها (خطا یا <bdi dir="ltr">timeout</bdi> ⇐ <bdi dir="ltr">LLM</bdi> با دلیل <code>classifier_error</code>).</li>
+<li>سؤال‌های بله/خیر دروازه‌ها: دو دروازه مطمئن ⇐ <bdi dir="ltr">LLM</bdi> (<code>a_or_b_ambiguous</code>)؛ یکی ⇐ همان مسیر (مگر <code>gate_veto</code>).</li>
+<li>مسیرهای اصلی به ترتیب با پاسخ‌های مدل سبک؛ هیچ‌کدام ⇐ <bdi dir="ltr">LLM</bdi> (<code>no_route</code>).</li></ol>
+<h2 id="fastroute"><bdi dir="ltr">FastRoute</bdi><a class="anchor" href="#fastroute">#</a></h2>
+<div class="sig"><bdi dir="ltr">FastRoute</bdi>(<bdi dir="ltr">name</bdi>, <bdi dir="ltr">handler=None</bdi>, <bdi dir="ltr">guard=None</bdi>, <bdi dir="ltr">gate_question=None</bdi>, <bdi dir="ltr">gate_veto=None</bdi>, <bdi dir="ltr">questions=</bdi>{}, <bdi dir="ltr">tags=</bdi>(), <bdi dir="ltr">intent_tags=</bdi>{}, <bdi dir="ltr">order=100</bdi>)</div><table><thead><tr><th>آرگومان</th><th>توضیح</th></tr></thead><tbody><tr><td><code>name</code></td><td>نام مسیر؛ سؤال بله/خیرش با کلید <code>is_&lt;name&gt;</code> پرسیده می‌شود</td></tr><tr><td><code>handler</code></td><td><code>handler(req: RouteRequest) -&gt; reply | Defer | None</code>؛ دروازه‌ی بدون <bdi dir="ltr">handler</bdi> یعنی «همیشه <bdi dir="ltr">LLM</bdi>»</td></tr><tr><td><code>guard</code></td><td><code>callable(text) -&gt; bool</code> <bdi dir="ltr">regex</bdi> ارزان؛ اگر جور شد مسیر بدون مدل سبک اجرا می‌شود</td></tr><tr><td><code>gate_question</code></td><td>سؤال بله/خیر <bdi dir="ltr">Jev</bdi> (<code>{"type": "noul", ...}</code>)</td></tr><tr><td><code>gate_veto</code></td><td><code>callable(text) -&gt; bool</code>؛ پاسخ «بله»ی <bdi dir="ltr">Jev</bdi> را برای این متن نادیده می‌گیرد</td></tr><tr><td><code>questions</code></td><td>سؤال‌های انتخابی مسیر اصلی (در هر دو <bdi dir="ltr">backend</bdi> پرسیده می‌شوند)</td></tr><tr><td><code>tags</code></td><td>برچسب‌های ابزار/پرامپت مرتبط (برای انتخاب ابزار در مسیر <bdi dir="ltr">LLM</bdi>)</td></tr><tr><td><code>intent_tags</code></td><td>نگاشت پاسخ سؤال <code>intent</code> به برچسب‌ها</td></tr><tr><td><code>order</code></td><td>ترتیب اجرا (کوچک‌تر اول)</td></tr></tbody></table>
+<h2 id="routerequest"><bdi dir="ltr">RouteRequest</bdi><a class="anchor" href="#routerequest">#</a></h2>
+<table><thead><tr><th>عضو</th><th>توضیح</th></tr></thead><tbody><tr><td><code>user</code>، <code>conversation</code>، <code>text</code></td><td>ورودی‌ها</td></tr><tr><td><code>cls</code></td><td>پاسخ‌های مدل سبک: <code>{key: {"choice", "confidence", "p"?}}</code>؛ <bdi dir="ltr">None</bdi> اگر از <bdi dir="ltr">guard</bdi> آمده</td></tr><tr><td><code>threshold</code></td><td>آستانه‌ی اطمینان (<code>FAST_THRESHOLD</code>)</td></tr><tr><td><code>gate_p</code></td><td>احتمال «بله» هر دروازه: <code>{route_name: p}</code></td></tr><tr><td><code>run_tool(name, args)</code></td><td>اجرای ابزار ثبت‌شده برای همین کاربر، با لاگ</td></tr><tr><td><code>reply(text, events=None)</code></td><td>پاسخ نهایی؛ کارت پیشنهادهای ساخته‌شده خودکار اضافه می‌شود</td></tr></tbody></table>
+<p>برای رفتن به <bdi dir="ltr">LLM</bdi> <code>Defer('reason')</code> برگردانید؛ دلیل در لاگ (<code>fast_reason</code>) می‌ماند.</p>
+<h2 id="نمونه-مسیر-دروازه-با-regex">نمونه: مسیر دروازه با <bdi dir="ltr">regex</bdi><a class="anchor" href="#نمونه-مسیر-دروازه-با-regex">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">import</span> re
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> FastRoute
+
+LEAVE = re.compile(r<span class="tk-s">&#x27;مرخصی&#x27;</span>)
+ASK = re.compile(r<span class="tk-s">&#x27;چند|چقدر|مانده|باقی&#x27;</span>)
+
+<span class="tk-k">def</span> leave_route(req):
+    result = req.run_tool(<span class="tk-s">&#x27;get_leave_balance&#x27;</span>, {})
+    <span class="tk-k">return</span> req.reply(f<span class="tk-s">&#x27;{result[&quot;remaining_days&quot;]} روز مرخصی برایتان مانده است.&#x27;</span>)
+
+ROUTE = FastRoute(name=<span class="tk-s">&#x27;leave&#x27;</span>, handler=leave_route, tags=(<span class="tk-s">&#x27;leave&#x27;</span>,),
+                  guard=<span class="tk-k">lambda</span> t: bool(LEAVE.search(t) <span class="tk-k">and</span> ASK.search(t)))</code></pre></div>
+<h2 id="نمونه-مسیر-اصلی-با-سؤال-نیت">نمونه: مسیر اصلی با سؤال نیت<a class="anchor" href="#نمونه-مسیر-اصلی-با-سؤال-نیت">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> Defer, FastRoute
+
+QUESTIONS = {
+    <span class="tk-s">&#x27;intent&#x27;</span>: {
+        <span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;choice&#x27;</span>,
+        <span class="tk-s">&#x27;instructions&#x27;</span>: <span class="tk-s">&#x27;The user writes in Persian to a shop assistant. What does the user want?&#x27;</span>,
+        <span class="tk-s">&#x27;criteria&#x27;</span>: {
+            <span class="tk-s">&#x27;list&#x27;</span>: <span class="tk-s">&#x27;List or filter their orders&#x27;</span>,
+            <span class="tk-s">&#x27;smalltalk&#x27;</span>: <span class="tk-s">&#x27;Greeting, thanks or help&#x27;</span>,
+            <span class="tk-s">&#x27;other&#x27;</span>: <span class="tk-s">&#x27;Anything else&#x27;</span>,
+        },
+    },
+}
+
+<span class="tk-k">def</span> orders_route(req):
+    intent = req.cls[<span class="tk-s">&#x27;intent&#x27;</span>]
+    <span class="tk-k">if</span> intent[<span class="tk-s">&#x27;confidence&#x27;</span>] &lt; req.threshold:
+        <span class="tk-k">return</span> Defer(<span class="tk-s">&#x27;low_intent_confidence&#x27;</span>)
+    <span class="tk-k">if</span> intent[<span class="tk-s">&#x27;choice&#x27;</span>] == <span class="tk-s">&#x27;smalltalk&#x27;</span>:
+        <span class="tk-k">return</span> req.reply(<span class="tk-s">&#x27;سلام! می‌توانم سفارش‌هایتان را نشان بدهم.&#x27;</span>)
+    <span class="tk-k">if</span> intent[<span class="tk-s">&#x27;choice&#x27;</span>] == <span class="tk-s">&#x27;list&#x27;</span>:
+        result = req.run_tool(<span class="tk-s">&#x27;list_orders&#x27;</span>, {})
+        <span class="tk-k">return</span> req.reply(f<span class="tk-s">&#x27;{result[&quot;count&quot;]} سفارش دارید.&#x27;</span>,
+                         [{<span class="tk-s">&#x27;event&#x27;</span>: <span class="tk-s">&#x27;order_list&#x27;</span>, <span class="tk-s">&#x27;items&#x27;</span>: result[<span class="tk-s">&#x27;orders&#x27;</span>]}])
+    <span class="tk-k">return</span> Defer(f<span class="tk-s">&#x27;intent_{intent[&quot;choice&quot;]}&#x27;</span>)
+
+ROUTE = FastRoute(name=<span class="tk-s">&#x27;orders&#x27;</span>, handler=orders_route, questions=QUESTIONS,
+                  intent_tags={<span class="tk-s">&#x27;list&#x27;</span>: (<span class="tk-s">&#x27;orders&#x27;</span>,)})</code></pre></div>
+<h2 id="نمونه-دروازه-ای-که-همیشه-به-llm-می-فرستد">نمونه: دروازه‌ای که همیشه به <bdi dir="ltr">LLM</bdi> می‌فرستد<a class="anchor" href="#نمونه-دروازه-ای-که-همیشه-به-llm-می-فرستد">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code>CREATE = FastRoute(
+    name=<span class="tk-s">&#x27;create&#x27;</span>,                                <span class="tk-c"># دلیل لاگ: create_request</span>
+    guard=<span class="tk-k">lambda</span> t: <span class="tk-s">&#x27;ثبت کن&#x27;</span> <span class="tk-k">in</span> t,
+    gate_question={<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;noul&#x27;</span>, <span class="tk-s">&#x27;instructions&#x27;</span>: <span class="tk-s">&#x27;The user wants to submit a NEW request.&#x27;</span>,
+                   <span class="tk-s">&#x27;criteria&#x27;</span>: {<span class="tk-s">&#x27;true&#x27;</span>: <span class="tk-s">&#x27;Asks to create or register something new&#x27;</span>, <span class="tk-s">&#x27;false&#x27;</span>: <span class="tk-s">&#x27;Anything else&#x27;</span>}},
+    tags=(<span class="tk-s">&#x27;create&#x27;</span>,),
+    order=10,
+)</code></pre></div>
+<h2 id="catalogprovider"><bdi dir="ltr">CatalogProvider</bdi><a class="anchor" href="#catalogprovider">#</a></h2>
+<p>اگر کاربر موجودیت‌ها را با نام صدا می‌زند («سفارش آخرم»، «گوشی سامسونگ»)، یک کاتالوگ بسازید تا هسته سؤال «کدام؟» را به مدل سبک
+بدهد و تطبیق متنی هم داشته باشید.</p>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> nlu
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> CatalogEntry, CatalogProvider
+
+
+<span class="tk-k">class</span> ProductCatalog(CatalogProvider):
+    name = <span class="tk-s">&#x27;products&#x27;</span>
+    question_key = <span class="tk-s">&#x27;product&#x27;</span>                         <span class="tk-c"># کلید پاسخ در req.cls</span>
+    instructions = <span class="tk-s">&#x27;Which product does the message refer to?&#x27;</span>
+    none_label = <span class="tk-s">&#x27;No specific product is mentioned&#x27;</span>
+
+    <span class="tk-k">def</span> entries(self):
+        <span class="tk-k">return</span> [CatalogEntry(key=str(p.id), title=p.title, aliases=tuple(p.aliases), description=p.summary, data=p)
+                <span class="tk-k">for</span> p <span class="tk-k">in</span> Product.objects.filter(active=<span class="tk-k">True</span>)]
+
+
+<span class="tk-k">def</span> my_route(req):
+    entry = nlu.resolve_catalog(ProductCatalog(), req.cls, req.text)   <span class="tk-c"># پاسخ مطمئن مدل سبک، وگرنه تطبیق متنی</span>
+    ...</code></pre></div>
+<h2 id="backend-مدل-سبک"><bdi dir="ltr">backend</bdi> مدل سبک<a class="anchor" href="#backend-مدل-سبک">#</a></h2>
+<table><thead><tr><th><bdi dir="ltr">backend</bdi></th><th>سؤال‌ها</th><th>تنظیم</th></tr></thead><tbody><tr><td><code>jev</code> (پیش‌فرض)</td><td>سؤال‌های اصلی + بله/خیر دروازه‌ها + کاتالوگ‌ها، در یک درخواست <code>/v1/systemone</code></td><td><code>JEV_BASE_URL</code>، <code>JEV_API_KEY</code>، <code>JEV_MODEL</code></td></tr><tr><td><code>llm</code></td><td>فقط سؤال‌های اصلی؛ هر سؤال یک انتخاب تک‌حرفی با <bdi dir="ltr">confidence</bdi> از <bdi dir="ltr">logprobs</bdi></td><td><code>INTENT_BASE_URL</code>، <code>INTENT_MODEL</code></td></tr></tbody></table><div class="adm warn"><b class="t">مبلغ و عدد با کد</b><p>مدل سبک ماشین‌حساب نیست. مبلغ، تاریخ و شناسه را با کد استخراج کنید (<code>agent_helper.fa.extract_amount</code> برای مبلغ فارسی). قیدی را که مسیر سریع نمی‌فهمد («بجز اولی»، نام شخص) به <bdi dir="ltr">LLM</bdi> بفرستید تا بی‌صدا نادیده گرفته نشود.</p></div>
+<div class="pn"><a href="actions.html"><small>قبلی</small>→ اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a href="prompts.html"><small>بعدی</small>پرامپت و انتخاب ابزار ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#ترتیب-تصمیم">ترتیب تصمیم</a><a class="h2" href="#fastroute"><bdi dir="ltr">FastRoute</bdi></a><a class="h2" href="#routerequest"><bdi dir="ltr">RouteRequest</bdi></a><a class="h2" href="#نمونه-مسیر-دروازه-با-regex">نمونه: مسیر دروازه با <bdi dir="ltr">regex</bdi></a><a class="h2" href="#نمونه-مسیر-اصلی-با-سؤال-نیت">نمونه: مسیر اصلی با سؤال نیت</a><a class="h2" href="#نمونه-دروازه-ای-که-همیشه-به-llm-می-فرستد">نمونه: دروازه‌ای که همیشه به <bdi dir="ltr">LLM</bdi> می‌فرستد</a><a class="h2" href="#catalogprovider"><bdi dir="ltr">CatalogProvider</bdi></a><a class="h2" href="#backend-مدل-سبک"><bdi dir="ltr">backend</bdi> مدل سبک</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

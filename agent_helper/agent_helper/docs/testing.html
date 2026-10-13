@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تست — agent-helper</title><meta name="description" content="تست افزونه بدون شبکه: MockProvider، override، مسیر سریع و endpoint"><link rel="stylesheet" href="style.css"></head>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
+<div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="on" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
+<main><div class="crumb">عملیات</div><h1>تست</h1><p class="lead">تست افزونه بدون شبکه: <bdi dir="ltr">MockProvider</bdi>، <bdi dir="ltr">override</bdi>، مسیر سریع و <bdi dir="ltr">endpoint</bdi></p>
+<h2 id="ابزارهای-تست">ابزارهای تست<a class="anchor" href="#ابزارهای-تست">#</a></h2>
+<table><thead><tr><th>ابزار</th><th>کار</th></tr></thead><tbody><tr><td><code>agent_helper.registry.override([PLUGIN])</code></td><td>فقط افزونه‌های داده‌شده ثبت باشند</td></tr><tr><td><code>agent_helper.llm.MockProvider([LLMResponse(...), ...])</code></td><td><bdi dir="ltr">LLM</bdi> جعلی بدون شبکه؛ <code>call_history</code> درخواست‌ها را نگه می‌دارد</td></tr><tr><td><code>agent_helper.testing.fast_router(on=True, **env)</code></td><td>روشن/خاموش کردن مسیر سریع در یک بلوک</td></tr><tr><td><code>mock.patch('agent_helper.nlu.classify', return_value=...)</code></td><td>پاسخ جعلی مدل سبک</td></tr><tr><td><code>agent_helper.testing.make_user(name)</code></td><td>ساخت کاربر (با <code>TEST_USER_FACTORY</code> قابل سفارشی‌سازی)</td></tr></tbody></table>
+<h2 id="حلقه-ی-عامل">حلقه‌ی عامل<a class="anchor" href="#حلقه-ی-عامل">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">from</span> agent_helper.llm <span class="tk-k">import</span> LLMResponse, MockProvider, ToolCall, run_assistant_agent
+
+provider = MockProvider([
+    LLMResponse(tool_calls=[ToolCall(id=<span class="tk-s">&#x27;1&#x27;</span>, name=<span class="tk-s">&#x27;list_orders&#x27;</span>, arguments={})]),
+    LLMResponse(text=<span class="tk-s">&#x27;دو سفارش دارید.&#x27;</span>),
+])
+<span class="tk-k">with</span> override([PLUGIN]), fast_router(on=<span class="tk-k">False</span>):
+    events = list(run_assistant_agent(user, conversation, <span class="tk-s">&#x27;سفارش‌هایم&#x27;</span>, provider=provider))
+
+assert events[-1][<span class="tk-s">&#x27;event&#x27;</span>] == <span class="tk-s">&#x27;done&#x27;</span>
+assert len(provider.call_history[0][<span class="tk-s">&#x27;tools&#x27;</span>]) == 2          <span class="tk-c"># ابزارهایی که مدل دید</span></code></pre></div>
+<h2 id="مسیر-سریع">مسیر سریع<a class="anchor" href="#مسیر-سریع">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">from</span> unittest <span class="tk-k">import</span> mock
+<span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> router
+
+answers = {<span class="tk-s">&#x27;intent&#x27;</span>: {<span class="tk-s">&#x27;choice&#x27;</span>: <span class="tk-s">&#x27;list&#x27;</span>, <span class="tk-s">&#x27;confidence&#x27;</span>: 0.95}}
+<span class="tk-k">with</span> override([PLUGIN]), fast_router(), mock.patch(<span class="tk-s">&#x27;agent_helper.nlu.classify&#x27;</span>, return_value=answers):
+    res = router.try_fast_path(user, <span class="tk-k">None</span>, <span class="tk-s">&#x27;سفارش‌هایم را نشان بده&#x27;</span>)
+assert res[<span class="tk-s">&#x27;path&#x27;</span>] == <span class="tk-s">&#x27;fast&#x27;</span></code></pre></div>
+<h2 id="اقدام-معلق-و-endpoint">اقدام معلق و <bdi dir="ltr">endpoint</bdi><a class="anchor" href="#اقدام-معلق-و-endpoint">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">from</span> rest_framework.test <span class="tk-k">import</span> APIRequestFactory, force_authenticate
+<span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> actions
+<span class="tk-k">from</span> agent_helper.views <span class="tk-k">import</span> ActionConfirmView
+
+action = actions.create_pending(user, <span class="tk-k">None</span>, <span class="tk-s">&#x27;cancel_order&#x27;</span>, {<span class="tk-s">&#x27;order_id&#x27;</span>: order.id})
+req = APIRequestFactory().post(f<span class="tk-s">&#x27;/api/assistant/actions/{action.id}/confirm/&#x27;</span>, {}, format=<span class="tk-s">&#x27;json&#x27;</span>)
+force_authenticate(req, user=other_user)
+assert ActionConfirmView.as_view()(req, action_id=action.id).status_code == 403</code></pre></div>
+<h2 id="اجرا">اجرا<a class="anchor" href="#اجرا">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>python manage.py test agent_helper myplugin
+# پروژه‌ی مستقل نمونه (بدون هیچ افزونه‌ی دیگری):
+cd agent_helper_demo &amp;&amp; python manage.py test agent_helper agent_helper_demo</code></pre></div><div class="adm tip"><b class="t">تست جداسازی</b><p>هسته تستی دارد که <bdi dir="ltr">import</bdi> از پکیج‌های دامنه را ممنوع می‌کند. برای افزونه‌ی خودتان هم تست «پیشنهاد ذخیره نمی‌کند»، «کاربر دیگر ۴۰۳» و «تایید دوباره یک‌بار اجرا» بنویسید.</p></div>
+<div class="pn"><a href="observability.html"><small>قبلی</small>→ لاگ، ادمین و پایش</a><a href="deployment.html"><small>بعدی</small>استقرار ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#ابزارهای-تست">ابزارهای تست</a><a class="h2" href="#حلقه-ی-عامل">حلقه‌ی عامل</a><a class="h2" href="#مسیر-سریع">مسیر سریع</a><a class="h2" href="#اقدام-معلق-و-endpoint">اقدام معلق و <bdi dir="ltr">endpoint</bdi></a><a class="h2" href="#اجرا">اجرا</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

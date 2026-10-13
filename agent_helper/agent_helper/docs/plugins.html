@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نوشتن افزونه — agent-helper</title><meta name="description" content="ساختار، ثبت و قواعد یک افزونه"><link rel="stylesheet" href="style.css"></head>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
+<div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="on" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
+<main><div class="crumb">راهنما</div><h1>نوشتن افزونه</h1><p class="lead">ساختار، ثبت و قواعد یک افزونه</p>
+<p>افزونه یک اپ معمولی <bdi dir="ltr">Django</bdi> است که در <code>AppConfig.ready()</code> یک شیء <code>Plugin</code> را ثبت می‌کند. هسته
+هیچ‌چیزی درباره‌ی دامنه نمی‌داند؛ همه‌ی دانش (ابزار، اقدام، قواعد پرامپت، مسیر سریع) در افزونه است.</p>
+<h2 id="ساختار-پیشنهادی">ساختار پیشنهادی<a class="anchor" href="#ساختار-پیشنهادی">#</a></h2>
+<div class="pre"><span class="lang"></span><button type="button">کپی</button><pre><code>myplugin/
+├── apps.py          # register(PLUGIN) در ready()
+├── models.py        # مدل‌های دامنه (اگر لازم است)
+├── plugin.py        # ToolSpec ها، ActionKind ها، PromptFragment ها، FastRoute ها و PLUGIN
+├── services.py      # منطق دامنه (کوئری‌ها، اعتبارسنجی، اجرا)
+└── tests/</code></pre></div>
+<h2 id="plugin"><bdi dir="ltr">Plugin</bdi><a class="anchor" href="#plugin">#</a></h2>
+<div class="sig"><bdi dir="ltr">Plugin</bdi>(<bdi dir="ltr">name</bdi>, <bdi dir="ltr">tools=</bdi>(), <bdi dir="ltr">actions=</bdi>(), <bdi dir="ltr">catalogs=</bdi>(), <bdi dir="ltr">prompt_fragments=</bdi>(), <bdi dir="ltr">fast_routes=</bdi>(), <bdi dir="ltr">attachment_tags=</bdi>())</div><table><thead><tr><th>فیلد</th><th>نوع</th><th>توضیح</th></tr></thead><tbody><tr><td><code>name</code></td><td><bdi dir="ltr">str</bdi></td><td>نام یکتا؛ ثبت دوباره با همین نام جایگزین قبلی می‌شود</td></tr><tr><td><code>tools</code></td><td><bdi dir="ltr">ToolSpec</bdi>[]</td><td>ابزارها؛ نام ابزار باید در همه‌ی افزونه‌ها یکتا باشد</td></tr><tr><td><code>actions</code></td><td><bdi dir="ltr">ActionKind</bdi>[]</td><td>نوع‌های اقدام معلق؛ <code>kind</code> یکتا</td></tr><tr><td><code>catalogs</code></td><td><bdi dir="ltr">CatalogProvider</bdi>[]</td><td>کاتالوگ موجودیت‌ها برای سؤال «کدام؟»</td></tr><tr><td><code>prompt_fragments</code></td><td><bdi dir="ltr">PromptFragment</bdi>[]</td><td>قواعد پرامپت</td></tr><tr><td><code>fast_routes</code></td><td><bdi dir="ltr">FastRoute</bdi>[]</td><td>مسیرهای بدون <bdi dir="ltr">LLM</bdi></td></tr><tr><td><code>attachment_tags</code></td><td><bdi dir="ltr">tuple</bdi>[<bdi dir="ltr">str</bdi>]</td><td>برچسب‌هایی که وقتی پیام تصویر دارد انتخاب می‌شوند</td></tr></tbody></table>
+<h2 id="ثبت">ثبت<a class="anchor" href="#ثبت">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">from</span> django.apps <span class="tk-k">import</span> AppConfig
+
+<span class="tk-k">class</span> MyPluginConfig(AppConfig):
+    name = <span class="tk-s">&#x27;myplugin&#x27;</span>
+
+    <span class="tk-k">def</span> ready(self):
+        <span class="tk-k">import</span> agent_helper
+        <span class="tk-k">from</span> myplugin.plugin <span class="tk-k">import</span> PLUGIN
+        agent_helper.register(PLUGIN)</code></pre></div>
+<p>ترتیب افزونه‌ها همان ترتیب <code>INSTALLED_APPS</code> است و ترتیب ابزارها، مسیرها و قواعد هم‌ترتیب را تعیین می‌کند.
+<code>manage.py check</code> ناسازگاری‌ها را گزارش می‌کند (<code>agent_helper.E001</code>: ابزار پیشنهاددهنده‌ای که نوع اقدامش ثبت نشده).</p>
+<h2 id="قواعد-طلایی">قواعد طلایی<a class="anchor" href="#قواعد-طلایی">#</a></h2>
+<ol>
+<li>ابزار <b>هرگز</b> شناسه‌ی کاربر را از آرگومان نخواند؛ هر کوئری با <code>user</code> ورودی فیلتر شود.</li>
+<li>ابزار <b>هرگز</b> چیزی را تغییر ندهد؛ تغییر فقط در <code>ActionKind.execute</code>. ابزار فقط <code>ctx.propose()</code> می‌کند.</li>
+<li><code>execute</code> همه‌چیز را دوباره بررسی کند (ممکن است داده بعد از پیشنهاد عوض شده باشد) و برای هر مورد ممیزی بنویسد.</li>
+<li>خروجی ابزار کوتاه و ساختاریافته باشد؛ مدل از روی آن پاسخ می‌سازد و رابط کاربری از رویدادهایش کارت.</li>
+<li>متن‌های داخل داده (عنوان، یادداشت) را «داده» بدانید نه دستور؛ قاعده‌ی تزریق هسته همیشه در پرامپت هست.</li>
+</ol>
+<h2 id="نمونه-ی-کامل">نمونه‌ی کامل<a class="anchor" href="#نمونه-ی-کامل">#</a></h2>
+<p>پکیج <code>agent-helper-demo</code> (فایل <code>agent_helper_demo/plugin.py</code>) یک افزونه‌ی کامل و کوچک است: دو ابزار فقط‌خواندنی،
+یک ابزار پیشنهاد با اقدام <code>add_note</code>، یک مسیر سریع («چند روز مرخصی دارم؟») و یک قاعده‌ی پرامپت، همراه با تست‌ها.</p>
+<h2 id="چند-افزونه-کنار-هم">چند افزونه کنار هم<a class="anchor" href="#چند-افزونه-کنار-هم">#</a></h2>
+<p>چند افزونه می‌توانند هم‌زمان نصب باشند؛ مدل ابزارهای همه را می‌بیند (یا با <a href="prompts.html">انتخاب ابزار</a> فقط مرتبط‌ها را).
+از برچسب‌های مجزا (<code>tags</code>) استفاده کنید تا انتخاب ابزار درست کار کند.</p>
+
+<div class="pn"><a href="configuration.html"><small>قبلی</small>→ پیکربندی</a><a href="tools.html"><small>بعدی</small>ابزارها (<bdi dir="ltr">ToolSpec</bdi>) ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#ساختار-پیشنهادی">ساختار پیشنهادی</a><a class="h2" href="#plugin"><bdi dir="ltr">Plugin</bdi></a><a class="h2" href="#ثبت">ثبت</a><a class="h2" href="#قواعد-طلایی">قواعد طلایی</a><a class="h2" href="#نمونه-ی-کامل">نمونه‌ی کامل</a><a class="h2" href="#چند-افزونه-کنار-هم">چند افزونه کنار هم</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

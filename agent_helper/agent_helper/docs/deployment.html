@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>استقرار — agent-helper</title><meta name="description" content="نصب روی سرور آفلاین، nginx، مدل خودمیزبان و نصب روی جدول‌های قدیمی"><link rel="stylesheet" href="style.css"></head>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
+<div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="on" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
+<main><div class="crumb">عملیات</div><h1>استقرار</h1><p class="lead">نصب روی سرور آفلاین، <bdi dir="ltr">nginx</bdi>، مدل خودمیزبان و نصب روی جدول‌های قدیمی</p>
+<h2 id="چک-لیست">چک‌لیست<a class="anchor" href="#چک-لیست">#</a></h2>
+<ul><li><bdi dir="ltr">wheel</bdi>ها و <code>wheelhouse</code> روی سرور؛ <code>pip install --no-index</code>.</li>
+<li><code>migrate</code>.</li><li>نشانی‌های <bdi dir="ltr">LLM</bdi>، مدل سبک و بینایی در تنظیمات یا متغیر محیطی.</li>
+<li><bdi dir="ltr">cache</bdi> مشترک (<bdi dir="ltr">Redis</bdi>) برای سقف نرخ در چند پروسه.</li><li><bdi dir="ltr">nginx:</bdi> بدون بافر برای مسیر <code>chat/</code>؛ <bdi dir="ltr">timeout</bdi> خواندن ≥ ۱۲۰ ثانیه.</li>
+<li>سرور <bdi dir="ltr">ASGI/WSGI</bdi> با <bdi dir="ltr">worker</bdi> کافی: هر گفتگوی <bdi dir="ltr">LLM</bdi> یک <bdi dir="ltr">worker</bdi> را تا پایان استریم نگه می‌دارد.</li></ul>
+<div class="pre"><span class="lang"></span><button type="button">کپی</button><pre><code>location /api/assistant/chat/ {
+    proxy_pass http://app;
+    proxy_buffering off;
+    proxy_read_timeout 180s;
+}</code></pre></div>
+<h2 id="مدل-خودمیزبان">مدل خودمیزبان<a class="anchor" href="#مدل-خودمیزبان">#</a></h2>
+<ul><li><b><bdi dir="ltr">LLM:</bdi></b> <bdi dir="ltr">vLLM</bdi> یا هر سرور <bdi dir="ltr">OpenAI-compatible</bdi> با <bdi dir="ltr">tool calling</bdi>؛ <code>LLM_PROVIDER='openai'</code>. <bdi dir="ltr">prefix caching</bdi> توکن‌های تکراری پرامپت را ارزان می‌کند.</li>
+<li><b>مدل سبک:</b> <bdi dir="ltr">Jev</bdi> یا هر سرور با همان قرارداد <code>/v1/systemone</code>) یا یک مدل کوچک با <bdi dir="ltr">logprobs</bdi> (<code>INTENT_BACKEND='llm'</code>).</li>
+<li><b>بینایی:</b> مدل <bdi dir="ltr">VL</bdi> روی همان سرور یا سرور جدا (<code>VISION_*</code>).</li></ul>
+<p>بعد از تغییر مدل، ارزیابی مسیریابی و یک سناریوی کامل هر افزونه را دوباره اجرا کنید.</p>
+<h2 id="نصب-روی-جدول-های-قدیمی-برچسب-دیگر">نصب روی جدول‌های قدیمی (برچسب دیگر)<a class="anchor" href="#نصب-روی-جدول-های-قدیمی-برچسب-دیگر">#</a></h2>
+<p>اگر جدول‌ها از نسخه‌ای قبلی با برچسب اپ دیگری (مثلاً <code>assistant</code>) وجود دارند، بدون تغییر دیتابیس:</p>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># myproject/agent_apps.py</span>
+<span class="tk-k">from</span> agent_helper.apps <span class="tk-k">import</span> AgentHelperConfig
+
+<span class="tk-k">class</span> AssistantConfig(AgentHelperConfig):
+    name = <span class="tk-s">&#x27;agent_helper&#x27;</span>
+    label = <span class="tk-s">&#x27;my_old_label&#x27;</span>      <span class="tk-c"># همان جدول‌ها، content typeها، مجوزها و نام URLهای ادمین</span>
+
+<span class="tk-c"># settings.py</span>
+INSTALLED_APPS += [<span class="tk-s">&#x27;myproject.agent_apps.AssistantConfig&#x27;</span>]
+MIGRATION_MODULES = {<span class="tk-s">&#x27;my_old_label&#x27;</span>: <span class="tk-s">&#x27;myproject.old_migrations&#x27;</span>}   <span class="tk-c"># تاریخچه‌ی migration موجود</span></code></pre></div><div class="adm warn"><b class="t"><bdi dir="ltr">migration</bdi> دستی</b><p>در این حالت <code>makemigrations</code> باید فقط روی برچسب قدیمی اجرا شود. <bdi dir="ltr">migration</bdi> اولیه‌ی خود پکیج (<code>agent_helper/migrations</code>) برای نصب تازه است.</p></div>
+<h2 id="به-روزرسانی">به‌روزرسانی<a class="anchor" href="#به-روزرسانی">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>pip install --no-index --find-links dist --upgrade agent-helper
+python manage.py migrate
+python manage.py check</code></pre></div>
+<div class="pn"><a href="testing.html"><small>قبلی</small>→ تست</a><a href="troubleshooting.html"><small>بعدی</small>عیب‌یابی و پرسش‌ها ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#چک-لیست">چک‌لیست</a><a class="h2" href="#مدل-خودمیزبان">مدل خودمیزبان</a><a class="h2" href="#نصب-روی-جدول-های-قدیمی-برچسب-دیگر">نصب روی جدول‌های قدیمی (برچسب دیگر)</a><a class="h2" href="#به-روزرسانی">به‌روزرسانی</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

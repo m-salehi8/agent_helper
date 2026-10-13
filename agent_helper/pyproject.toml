@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-helper"
+version = "0.1.0"
+description = "Generic plugin-based chat agent for Django: LLM tool loop, no-LLM fast routes, user-confirmed pending actions, logs and SSE"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Proprietary"}
+dependencies = [
+    "Django>=4.2",
+    "djangorestframework>=3.14",
+    "django-jalali>=6.0",
+    "jdatetime>=4.1",
+    "requests>=2.28",
+]
+
+[tool.setuptools.packages.find]
+include = ["agent_helper*"]
+
+[tool.setuptools.package-data]
+agent_helper = ["docs/*.html", "docs/*.css"]

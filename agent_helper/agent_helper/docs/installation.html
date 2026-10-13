@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نصب — agent-helper</title><meta name="description" content="نصب آفلاین با wheel، افزودن به پروژه و migrate"><link rel="stylesheet" href="style.css"></head>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
+<div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="on" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
+<main><div class="crumb">شروع</div><h1>نصب</h1><p class="lead">نصب آفلاین با <bdi dir="ltr">wheel</bdi>، افزودن به پروژه و <bdi dir="ltr">migrate</bdi></p>
+<h2 id="نصب-از-wheel-آفلاین">نصب از <bdi dir="ltr">wheel</bdi> (آفلاین)<a class="anchor" href="#نصب-از-wheel-آفلاین">#</a></h2>
+<p>سرورهای عملیاتی معمولاً اینترنت ندارند؛ <bdi dir="ltr">wheel</bdi>ها و وابستگی‌ها را روی ماشین توسعه آماده کنید و همراه ببرید.</p>
+<ol class="steps">
+<li><b>ساخت <bdi dir="ltr">wheel</bdi> پکیج‌ها</b> (بدون اینترنت):<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>cd packages
+pip wheel --no-deps --no-build-isolation --no-index -w dist ./agent_helper ./agent_helper_demo</code></pre></div></li>
+<li><b>جمع‌کردن وابستگی‌ها</b> (یک‌بار، روی ماشینی با دسترسی):<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>pip download --only-binary=:all: -d wheelhouse \
+    Django==5.0.4 djangorestframework==3.15.1 django-jalali==6.2.1 jdatetime==5.0.0 requests==2.32.3</code></pre></div></li>
+<li><b>نصب روی سرور:</b><div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>pip install --no-index --find-links wheelhouse --find-links dist agent-helper</code></pre></div></li></ol>
+<div class="adm tip"><b class="t">نسخه‌ها</b><p>نسخه‌های بالا همان‌هایی است که تست شده‌اند. نسخه‌ی پایتون ماشین دانلود و سرور باید یکی باشد (<bdi dir="ltr">wheel</bdi>های باینری مثل <code>charset-normalizer</code>).</p></div>
+<h2 id="نصب-از-سورس-توسعه">نصب از سورس (توسعه)<a class="anchor" href="#نصب-از-سورس-توسعه">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>pip install -e packages/agent_helper
+# یا بدون نصب: مسیر packages/agent_helper را به sys.path اضافه کنید</code></pre></div>
+<h2 id="افزودن-به-پروژه">افزودن به پروژه<a class="anchor" href="#افزودن-به-پروژه">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># settings.py</span>
+INSTALLED_APPS = [
+    <span class="tk-c"># ...</span>
+    <span class="tk-s">&#x27;rest_framework&#x27;</span>,
+    <span class="tk-s">&#x27;django_jalali&#x27;</span>,
+    <span class="tk-s">&#x27;agent_helper&#x27;</span>,
+    <span class="tk-s">&#x27;myplugin&#x27;</span>,            <span class="tk-c"># افزونه‌ی شما</span>
+]</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># urls.py</span>
+<span class="tk-k">from</span> django.urls <span class="tk-k">import</span> include, path
+
+urlpatterns = [
+    <span class="tk-c"># ...</span>
+    path(<span class="tk-s">&#x27;api/assistant/&#x27;</span>, include(<span class="tk-s">&#x27;agent_helper.urls&#x27;</span>)),
+]</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>python manage.py migrate agent_helper</code></pre></div>
+<h2 id="بررسی-نصب">بررسی نصب<a class="anchor" href="#بررسی-نصب">#</a></h2>
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>python manage.py check            # خطای agent_helper.E001 یعنی ابزاری به اقدام ثبت‌نشده اشاره می‌کند
+python manage.py test agent_helper</code></pre></div>
+<p>جدول‌هایی که ساخته می‌شوند: گفتگو، پیام، اقدام معلق، ممیزی، لاگ درخواست، لاگ مدل و لاگ ابزار (فهرست کامل در <a href="concepts.html">مفاهیم</a>).</p>
+
+<div class="pn"><a href="index.html"><small>قبلی</small>→ معرفی</a><a href="tutorial.html"><small>بعدی</small>آموزش: از صفر تا اولین گفتگو ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#نصب-از-wheel-آفلاین">نصب از <bdi dir="ltr">wheel</bdi> (آفلاین)</a><a class="h2" href="#نصب-از-سورس-توسعه">نصب از سورس (توسعه)</a><a class="h2" href="#افزودن-به-پروژه">افزودن به پروژه</a><a class="h2" href="#بررسی-نصب">بررسی نصب</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>
