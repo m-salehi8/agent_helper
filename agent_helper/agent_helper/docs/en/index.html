@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>agent-helper — agent-helper</title><meta name="description" content="A pluggable assistant for Django: an LLM with tools, a no-LLM fast path, and actions that only the user executes"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../index.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="on" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Getting started</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>agent-helper</h1><p class="lead">A pluggable assistant for Django: an LLM with tools, a no-LLM fast path, and actions that only the user executes</p>
+<p><b>agent-helper</b> is a Django app for building a conversational assistant on top of your own system's data. The core
+knows nothing about any domain; every use case (orders, notes, office requests, …) is a <b>plugin</b> that registers its own
+tools, actions and rules.</p>
+<div class="cards">
+<a href="tutorial.html"><b>🚀 Quick start</b><span>From an empty Django project to the first chat in 10 minutes</span></a>
+<a href="plugins.html"><b>🧩 Writing a plugin</b><span>Tools, pending actions, fast routes and prompt rules</span></a>
+<a href="http-api.html"><b>📡 API and SSE</b><span>Endpoints, events, request and response samples</span></a>
+<a href="security.html"><b>🛡️ Security model</b><span>Why the model never executes anything on its own</span></a>
+</div>
+<h2 id="what-you-get">What you get<a class="anchor" href="#what-you-get">#</a></h2>
+<ul>
+<li><b>Agent loop with tools</b> on any OpenAI-compatible server (vLLM, llama.cpp, …) or Anthropic; at most 6 rounds.</li>
+<li><b>Fast path without the LLM:</b> regex plus one call to a light model (Jev, or a local model with logprobs) for frequent messages; any doubt ⇒ LLM.</li>
+<li><b>Pending actions:</b> the model only creates a <i>proposal</i>; execution happens only when the user presses the button, with a lock, an expiry, idempotency and an audit trail.</li>
+<li><b>SSE streaming</b> for text, tool status, cards and errors.</li>
+<li><b>Image attachments</b> (e.g. an invoice) read by a vision model, with arithmetic checks.</li>
+<li><b>Full logging:</b> every message, model call and tool call with timing and tokens; admin included.</li>
+<li><b>Token reduction:</b> only the tools and rules relevant to the message are sent to the model.</li>
+<li><b>Rate limits</b> per minute and per day for each user.</li>
+<li><b>Offline:</b> no default address points to the internet; everything is configured by URL.</li>
+</ul>
+<h2 id="at-a-glance">At a glance<a class="anchor" href="#at-a-glance">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># myplugin/plugin.py</span>
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> Plugin, ToolSpec
+
+<span class="tk-k">def</span> list_orders(user, args, ctx):
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;orders&#x27;</span>: [{<span class="tk-s">&#x27;id&#x27;</span>: o.id, <span class="tk-s">&#x27;total&#x27;</span>: o.total} <span class="tk-k">for</span> o <span class="tk-k">in</span> user.orders.all()[:20]]}
+
+PLUGIN = Plugin(name=<span class="tk-s">&#x27;orders&#x27;</span>, tools=[
+    ToolSpec(<span class="tk-s">&#x27;list_orders&#x27;</span>, <span class="tk-s">&quot;List the user&#x27;s orders&quot;</span>, {<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;properties&#x27;</span>: {}}, list_orders),
+])</code></pre></div>
+<p>The user writes "show my orders", the model calls the <code>list_orders</code> tool (always for <code>request.user</code>) and the answer is streamed to the UI as SSE.</p>
+<h2 id="packages">Packages<a class="anchor" href="#packages">#</a></h2>
+<table><thead><tr><th>Package</th><th>Role</th></tr></thead><tbody><tr><td><code>agent-helper</code></td><td>The core (this documentation)</td></tr><tr><td><code>agent-helper-demo</code></td><td>Example "notes and leave" plugin with a standalone project; the best place to start reading code</td></tr></tbody></table>
+<h2 id="requirements">Requirements<a class="anchor" href="#requirements">#</a></h2>
+<ul><li>Python ≥ 3.10, Django ≥ 4.2, Django REST framework ≥ 3.14</li><li>django-jalali and jdatetime (Jalali dates), requests</li>
+<li>An LLM server with tool calling support (for the LLM path)</li><li>Optional: Jev or a local model with logprobs for the fast path; a vision model for image attachments</li></ul>
+
+<div class="pn"><span></span><a href="installation.html"><small>Next</small>Installation →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#what-you-get">What you get</a><a class="h2" href="#at-a-glance">At a glance</a><a class="h2" href="#packages">Packages</a><a class="h2" href="#requirements">Requirements</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

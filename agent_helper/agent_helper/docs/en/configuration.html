@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configuration — agent-helper</title><meta name="description" content="AGENT_HELPER settings, environment variables and common examples"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../configuration.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="on" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Guide</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Configuration</h1><p class="lead">AGENT_HELPER settings, environment variables and common examples</p>
+<p>All settings live in one <code>AGENT_HELPER</code> dict in <code>settings.py</code>. Each key is resolved in this order:</p>
+<ol><li><code>settings.AGENT_HELPER[key]</code></li><li>the matching environment variable (if any)</li><li>the default value</li></ol>
+<p>Values are read at the moment of use, so changing an environment variable in tests (<code>mock.patch.dict(os.environ)</code>) takes effect immediately.</p>
+<h2 id="minimal-setup">Minimal setup<a class="anchor" href="#minimal-setup">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>AGENT_HELPER = {
+    <span class="tk-s">&#x27;LLM_PROVIDER&#x27;</span>: <span class="tk-s">&#x27;openai&#x27;</span>,
+    <span class="tk-s">&#x27;LLM_BASE_URL&#x27;</span>: <span class="tk-s">&#x27;http://llm.internal:8000/v1&#x27;</span>,
+    <span class="tk-s">&#x27;LLM_MODEL&#x27;</span>: <span class="tk-s">&#x27;qwen3&#x27;</span>,
+}</code></pre></div>
+<h2 id="fast-path-with-jev">Fast path with Jev<a class="anchor" href="#fast-path-with-jev">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>AGENT_HELPER = {
+    <span class="tk-c"># ...</span>
+    <span class="tk-s">&#x27;USE_FAST_ROUTER&#x27;</span>: <span class="tk-s">&#x27;1&#x27;</span>,
+    <span class="tk-s">&#x27;INTENT_BACKEND&#x27;</span>: <span class="tk-s">&#x27;jev&#x27;</span>,
+    <span class="tk-s">&#x27;JEV_BASE_URL&#x27;</span>: <span class="tk-s">&#x27;http://jev.internal&#x27;</span>,     <span class="tk-c"># same /v1/systemone contract</span>
+    <span class="tk-s">&#x27;JEV_API_KEY&#x27;</span>: <span class="tk-s">&#x27;...&#x27;</span>,
+    <span class="tk-s">&#x27;FAST_THRESHOLD&#x27;</span>: 0.8,
+}</code></pre></div>
+<h2 id="fast-path-with-a-local-model">Fast path with a local model<a class="anchor" href="#fast-path-with-a-local-model">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>AGENT_HELPER = {
+    <span class="tk-c"># ...</span>
+    <span class="tk-s">&#x27;USE_FAST_ROUTER&#x27;</span>: <span class="tk-s">&#x27;1&#x27;</span>,
+    <span class="tk-s">&#x27;INTENT_BACKEND&#x27;</span>: <span class="tk-s">&#x27;llm&#x27;</span>,                    <span class="tk-c"># any OpenAI-compatible server that returns logprobs</span>
+    <span class="tk-s">&#x27;INTENT_BASE_URL&#x27;</span>: <span class="tk-s">&#x27;http://vllm.internal:8000/v1&#x27;</span>,
+    <span class="tk-s">&#x27;INTENT_MODEL&#x27;</span>: <span class="tk-s">&#x27;qwen3-1.7b&#x27;</span>,
+}</code></pre></div>
+<h2 id="with-environment-variables">With environment variables<a class="anchor" href="#with-environment-variables">#</a></h2>
+<div class="pre"><span class="lang">Shell</span><button type="button" data-done="Copied">Copy</button><pre><code>ASSISTANT_LLM_PROVIDER=openai
+ASSISTANT_LLM_BASE_URL=http://llm.internal:8000/v1
+ASSISTANT_LLM_API_KEY=...
+ASSISTANT_LLM_MODEL=qwen3
+ASSISTANT_USE_FAST_ROUTER=1
+TYPESAFE_BASE_URL=http://jev.internal
+TYPESAFE_API_KEY=...</code></pre></div>
+<h2 id="admin-with-your-project-s-theme">Admin with your project's theme<a class="anchor" href="#admin-with-your-project-s-theme">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>AGENT_HELPER = {
+    <span class="tk-c"># ...</span>
+    <span class="tk-s">&#x27;ADMIN_BASE&#x27;</span>: <span class="tk-s">&#x27;myproject.admin.BaseModelAdmin&#x27;</span>,       <span class="tk-c"># your project&#x27;s base admin class</span>
+    <span class="tk-s">&#x27;ADMIN_INLINE_BASE&#x27;</span>: <span class="tk-s">&#x27;myproject.admin.BaseTabularInline&#x27;</span>,
+    <span class="tk-c"># &#x27;REGISTER_ADMIN&#x27;: False,                             # register no admin at all</span>
+}</code></pre></div>
+<h2 id="assistant-identity-in-the-prompt">Assistant identity in the prompt<a class="anchor" href="#assistant-identity-in-the-prompt">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>AGENT_HELPER = {
+    <span class="tk-c"># ...</span>
+    <span class="tk-s">&#x27;ASSISTANT_TITLE&#x27;</span>: <span class="tk-s">&#x27;Shop assistant&#x27;</span>,
+    <span class="tk-s">&#x27;ASSISTANT_MISSION&#x27;</span>: <span class="tk-s">&quot;Your job is to answer briefly and precisely about the user&#x27;s orders.&quot;</span>,
+}</code></pre></div>
+<p>The full list of keys is in the <a href="settings-ref.html">settings reference</a>.</p>
+<div class="adm warn"><b class="t">No internet defaults</b><p>If <code>LLM_BASE_URL</code> is not set, no LLM request is made and the user gets a "could not connect to the provider" message. Jev without <code>JEV_BASE_URL</code> fails and the message falls through to the LLM.</p></div>
+<div class="pn"><a href="concepts.html"><small>Previous</small>← Concepts and architecture</a><a href="plugins.html"><small>Next</small>Writing a plugin →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#minimal-setup">Minimal setup</a><a class="h2" href="#fast-path-with-jev">Fast path with Jev</a><a class="h2" href="#fast-path-with-a-local-model">Fast path with a local model</a><a class="h2" href="#with-environment-variables">With environment variables</a><a class="h2" href="#admin-with-your-project-s-theme">Admin with your project's theme</a><a class="h2" href="#assistant-identity-in-the-prompt">Assistant identity in the prompt</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

@@ -1,12 +1,17 @@
 <!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>تغییرات — agent-helper</title><meta name="description" content="تاریخچه‌ی نسخه‌ها"><link rel="stylesheet" href="style.css"></head>
-<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0b1</bdi></span><span class="beta">بتا</span><span class="sp"></span>
+<a class="lang" href="en/changelog.html" hreflang="en" lang="en"><bdi dir="ltr">English</bdi></a>
 <input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
 <div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="on" href="changelog.html">تغییرات</a></nav>
-<main><div class="crumb">عملیات</div><h1>تغییرات</h1><p class="lead">تاریخچه‌ی نسخه‌ها</p>
-<h2 id="0-1-0">0.1.0<a class="anchor" href="#0-1-0">#</a></h2>
-<ul><li>نخستین نسخه‌ی عمومی.</li>
+<main><div class="crumb">عملیات</div><div class="beta-banner" role="note"><b>نسخه‌ی بتا (0.1.0<bdi dir="ltr">b1</bdi>).</b> این پکیج هنوز به‌صورت پایدار منتشر نشده است؛ تا نسخه‌ی 1.0 ممکن است <bdi dir="ltr">API</bdi> و تنظیمات تغییر کنند.</div><h1>تغییرات</h1><p class="lead">تاریخچه‌ی نسخه‌ها</p>
+<h2 id="0-1-0b1-بتا">0.1.0<bdi dir="ltr">b1</bdi> — بتا<a class="anchor" href="#0-1-0b1-بتا">#</a></h2>
+<ul><li>نخستین پیش‌انتشار بتا؛ هنوز نسخه‌ی پایدار نیست و تا 1.0 ممکن است <bdi dir="ltr">API</bdi> و تنظیمات تغییر کنند.</li>
+<li>مستندات به دو زبان فارسی و انگلیسی، همراه <bdi dir="ltr">wheel.</bdi></li>
+<li>رشته‌ی نسخه طبق <bdi dir="ltr">PEP</bdi> 440 (<code>agent_helper.__version__</code>)؛ نصب با <code>--pre</code> یا نسخه‌ی دقیق.</li></ul>
+<h2 id="0-1-0-داخلی">0.1.0 (داخلی)<a class="anchor" href="#0-1-0-داخلی">#</a></h2>
+<ul><li>نخستین نسخه‌ی جنریک.</li>
 <li>قرارداد افزونه: <code>ToolSpec</code>، <code>ActionKind</code>، <code>CatalogProvider</code>، <code>PromptFragment</code>، <code>FastRoute</code>، <code>Plugin</code>.</li>
 <li>اقدام معلق جنریک: پیش‌نمایش از <code>ActionKind.preview</code>، ذخیره‌ی وضعیت در هسته، ممیزی خطای اجرا.</li>
 <li>مسیر سریع جنریک با سؤال‌های <bdi dir="ltr">Jev</bdi> از افزونه‌ها؛ <bdi dir="ltr">backend</bdi> مدل لوکال.</li>
@@ -14,8 +19,8 @@
 <li>تنظیمات <code>AGENT_HELPER</code> با پشتیبانی متغیرهای محیطی؛ بدون نشانی پیش‌فرض اینترنتی.</li>
 <li>افزونه‌ی نمونه‌ی <code>agent-helper-demo</code> و پروژه‌ی مستقل.</li></ul>
 
-<div class="pn"><a href="troubleshooting.html"><small>قبلی</small>→ عیب‌یابی و پرسش‌ها</a><span></span></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
-<aside class="toc"><b>در این صفحه</b><a class="h2" href="#0-1-0">0.1.0</a></aside></div><script>
-document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
-const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+<div class="pn"><a href="troubleshooting.html"><small>قبلی</small>→ عیب‌یابی و پرسش‌ها</a><span></span></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0<bdi dir="ltr">b1</bdi> (<bdi dir="ltr">beta</bdi>) · مستندات پکیج</footer></main>
+<aside class="toc"><b>در این صفحه</b><a class="h2" href="#0-1-0b1-بتا">0.1.0<bdi dir="ltr">b1</bdi> — بتا</a><a class="h2" href="#0-1-0-داخلی">0.1.0 (داخلی)</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
 </script></body></html>

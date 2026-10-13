@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pending actions (ActionKind) — agent-helper</title><meta name="description" content="The only way to change data: proposal, card, button, execution with lock and audit"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../actions.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="on" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Guide</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Pending actions (ActionKind)</h1><p class="lead">The only way to change data: proposal, card, button, execution with lock and audit</p>
+<p>Every data change happens only through a pending action: a tool creates a proposal, the UI shows a card, and only when
+the user presses the button is the <code>execute</code> of that action kind run.</p>
+<div class="sig">ActionKind(kind, execute, preview=lambda payload: {}, propose_schema=None, audit_label=&#x27;&#x27;, expires_minutes=10, resets_mode=False)</div><table><thead><tr><th>Argument</th><th>Description</th></tr></thead><tbody><tr><td><code>kind</code></td><td>Unique name; stored in <code>PendingAction.kind</code></td></tr><tr><td><code>execute</code></td><td><code>execute(user, action, params) -&gt; dict</code>; only from the confirm endpoint</td></tr><tr><td><code>preview</code></td><td><code>preview(payload) -&gt; dict</code> fields of the <code>pending_action</code> event (what the card shows)</td></tr><tr><td><code>propose_schema</code></td><td>JSON schema of the proposal; <code>required</code> keys are checked when proposing</td></tr><tr><td><code>audit_label</code></td><td>Short label in audit rows the core writes (e.g. execution errors)</td></tr><tr><td><code>expires_minutes</code></td><td>Lifetime of the proposal</td></tr><tr><td><code>resets_mode</code></td><td>Clear <code>conversation.mode</code> after a successful execution</td></tr></tbody></table>
+<h2 id="lifecycle">Lifecycle<a class="anchor" href="#lifecycle">#</a></h2>
+<ol><li>The tool calls <code>ctx.propose(kind, payload)</code> ⇒ a <code>PendingAction</code> row with status <code>pending</code>.</li>
+<li>The core sends the <code>pending_action</code> event = <code>{event, action_id, ...preview(payload), expires_at}</code>.</li>
+<li>The user presses the button ⇒ <code>POST actions/&lt;id&gt;/confirm/</code> (any body, e.g. the ticked rows).</li>
+<li>Inside a transaction the core checks: row lock, ownership (403), idempotency (a repeat returns the previous result), status, expiry.</li>
+<li><code>execute(user, action, params)</code> runs inside a savepoint.</li>
+<li>The core stores the final status, execution time and result.</li></ol>
+<h2 id="execute-return-contract">execute return contract<a class="anchor" href="#execute-return-contract">#</a></h2>
+<table><thead><tr><th>Return value</th><th>Effect</th></tr></thead><tbody><tr><td><code>{"status": "confirmed" | "partial" | "failed" | "cancelled", "message", "results": [...], "status_code": 200}</code></td><td>The action is finalised; <code>results</code> is stored in <code>action.result</code></td></tr><tr><td><code>{"error": "...", "status_code": 400}</code> (no <code>status</code>)</td><td>The request is rejected but the action stays <code>pending</code> (e.g. invalid parameter)</td></tr><tr><td>Exception</td><td>The core audits it, marks the action <code>failed</code> and responds 500; no half-done change remains</td></tr></tbody></table><div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> actions
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> ActionKind
+
+
+<span class="tk-k">def</span> execute_cancel(user, action, params):
+    order = Order.objects.select_for_update().filter(id=action.payload[<span class="tk-s">&#x27;order_id&#x27;</span>], user=user).first()
+    <span class="tk-k">if</span> order is <span class="tk-k">None</span> <span class="tk-k">or</span> order.status != <span class="tk-s">&#x27;open&#x27;</span>:                 <span class="tk-c"># check again</span>
+        actions.audit(user, action, <span class="tk-s">&#x27;failed&#x27;</span>, <span class="tk-s">&#x27;Order is no longer open&#x27;</span>, node_id=action.payload[<span class="tk-s">&#x27;order_id&#x27;</span>])
+        <span class="tk-k">return</span> {<span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;failed&#x27;</span>, <span class="tk-s">&#x27;message&#x27;</span>: <span class="tk-s">&#x27;The order can no longer be cancelled.&#x27;</span>,
+                <span class="tk-s">&#x27;results&#x27;</span>: [{<span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;failed&#x27;</span>}], <span class="tk-s">&#x27;status_code&#x27;</span>: 200}
+    order.status = <span class="tk-s">&#x27;cancelled&#x27;</span>
+    order.save(update_fields=[<span class="tk-s">&#x27;status&#x27;</span>])
+    actions.audit(user, action, <span class="tk-s">&#x27;confirmed&#x27;</span>, <span class="tk-s">&#x27;Order cancelled&#x27;</span>, node_id=order.id, amount=order.total)
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;confirmed&#x27;</span>, <span class="tk-s">&#x27;message&#x27;</span>: f<span class="tk-s">&#x27;Order {order.id} was cancelled.&#x27;</span>,
+            <span class="tk-s">&#x27;results&#x27;</span>: [{<span class="tk-s">&#x27;order_id&#x27;</span>: order.id, <span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;success&#x27;</span>}], <span class="tk-s">&#x27;status_code&#x27;</span>: 200}
+
+
+CANCEL_ORDER = ActionKind(
+    kind=<span class="tk-s">&#x27;cancel_order&#x27;</span>,
+    execute=execute_cancel,
+    preview=<span class="tk-k">lambda</span> p: {<span class="tk-s">&#x27;kind&#x27;</span>: <span class="tk-s">&#x27;cancel_order&#x27;</span>, <span class="tk-s">&#x27;order_id&#x27;</span>: p[<span class="tk-s">&#x27;order_id&#x27;</span>], <span class="tk-s">&#x27;total&#x27;</span>: p[<span class="tk-s">&#x27;total&#x27;</span>]},
+    propose_schema={<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;required&#x27;</span>: [<span class="tk-s">&#x27;order_id&#x27;</span>]},
+    audit_label=<span class="tk-s">&#x27;Cancel order&#x27;</span>,
+)</code></pre></div>
+<h2 id="audit">Audit<a class="anchor" href="#audit">#</a></h2>
+<div class="sig">actions.audit(user, action, status, detail=&#x27;&#x27;, node_id=None, flow_id=None, amount=None)</div>
+<p><code>node_id</code> = item id, <code>flow_id</code> = parent object, <code>amount</code> = amount (all optional). Write one row per item.</p>
+<h2 id="proposing-without-a-tool">Proposing without a tool<a class="anchor" href="#proposing-without-a-tool">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> actions
+action = actions.create_pending(request.user, conversation, <span class="tk-s">&#x27;cancel_order&#x27;</span>, {<span class="tk-s">&#x27;order_id&#x27;</span>: 5, <span class="tk-s">&#x27;total&#x27;</span>: 1000})
+event = actions.pending_event(action)      <span class="tk-c"># the same SSE card event</span></code></pre></div><div class="adm danger"><b class="t">Never</b><p>In <code>execute</code>, never trust <code>params</code> to choose the user or the object; accept only a subset of the same <code>payload</code> (such as ticked rows that were part of the proposal).</p></div>
+<div class="pn"><a href="tools.html"><small>Previous</small>← Tools (ToolSpec)</a><a href="fast-routes.html"><small>Next</small>Fast path and Jev →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#lifecycle">Lifecycle</a><a class="h2" href="#execute-return-contract">execute return contract</a><a class="h2" href="#audit">Audit</a><a class="h2" href="#proposing-without-a-tool">Proposing without a tool</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

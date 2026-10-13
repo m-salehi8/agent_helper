@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tools (ToolSpec) — agent-helper</title><meta name="description" content="Defining a tool, the handler, events and proposing tools"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../tools.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="on" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Guide</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Tools (ToolSpec)</h1><p class="lead">Defining a tool, the handler, events and proposing tools</p>
+<div class="sig">ToolSpec(name, description, json_schema, handler, read_only=True, proposes=None, tags=(), status=None, events=None, conversation_mode=None)</div><table><thead><tr><th>Argument</th><th>Description</th></tr></thead><tbody><tr><td><code>name</code></td><td>Unique name (<code>[A-Za-z0-9_-]</code>, at most 64)</td></tr><tr><td><code>description</code></td><td>Text the model reads to decide whether to call it; keep it precise and short</td></tr><tr><td><code>json_schema</code></td><td>JSON schema of the arguments; must be <code>{"type": "object", ...}</code></td></tr><tr><td><code>handler</code></td><td><code>handler(user, args, ctx) -&gt; dict</code></td></tr><tr><td><code>read_only</code></td><td><code>True</code> for reading. <code>False</code> means it creates a proposal and <code>proposes</code> is required</td></tr><tr><td><code>proposes</code></td><td>The action kind this tool proposes</td></tr><tr><td><code>tags</code></td><td>Topic tags for tool selection; an untagged tool is always sent</td></tr><tr><td><code>status</code></td><td>Text (or <code>callable(args)</code>) of the <code>tool_status</code> event</td></tr><tr><td><code>events</code></td><td><code>callable(result) -&gt; [event, ...]</code> extra SSE events (e.g. a table)</td></tr><tr><td><code>conversation_mode</code></td><td>If not None, sets <code>conversation.mode</code> before running</td></tr></tbody></table>
+<h2 id="handler">handler<a class="anchor" href="#handler">#</a></h2>
+<div class="sig">handler(user, args: dict, ctx: ToolContext) -&gt; dict</div>
+<ul><li><code>user</code>: the authenticated user of the request; never taken from the arguments.</li>
+<li><code>args</code>: the model's arguments (always a dict; may be incomplete or wrong — validate them).</li>
+<li><code>ctx.conversation</code>: the current conversation (or None when run directly).</li>
+<li><code>ctx.propose(kind, payload, minutes=None)</code>: creates a pending action; the core sends the card itself.</li></ul>
+<p>Return errors as <code>{"error": "..."}</code> so the model can explain them to the user; an unhandled exception becomes a generic error.</p>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">def</span> get_order(user, args, ctx):
+    <span class="tk-k">try</span>:
+        order_id = int(args.get(<span class="tk-s">&#x27;order_id&#x27;</span>))
+    <span class="tk-k">except</span> (TypeError, ValueError):
+        <span class="tk-k">return</span> {<span class="tk-s">&#x27;error&#x27;</span>: <span class="tk-s">&#x27;order_id must be a number.&#x27;</span>}
+    order = Order.objects.filter(id=order_id, user=user).first()   <span class="tk-c"># always scoped to user</span>
+    <span class="tk-k">if</span> <span class="tk-k">not</span> order:
+        <span class="tk-k">return</span> {<span class="tk-s">&#x27;error&#x27;</span>: <span class="tk-s">&#x27;Order not found or not yours.&#x27;</span>}
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;id&#x27;</span>: order.id, <span class="tk-s">&#x27;status&#x27;</span>: order.get_status_display(), <span class="tk-s">&#x27;total&#x27;</span>: order.total}
+
+
+GET_ORDER = ToolSpec(
+    name=<span class="tk-s">&#x27;get_order&#x27;</span>,
+    description=<span class="tk-s">&quot;Details of one of the user&#x27;s own orders by id&quot;</span>,
+    json_schema={<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;properties&#x27;</span>: {<span class="tk-s">&#x27;order_id&#x27;</span>: {<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;integer&#x27;</span>}}, <span class="tk-s">&#x27;required&#x27;</span>: [<span class="tk-s">&#x27;order_id&#x27;</span>]},
+    handler=get_order,
+    tags=(<span class="tk-s">&#x27;orders&#x27;</span>,),
+    status=<span class="tk-k">lambda</span> args: f<span class="tk-s">&#x27;Fetching order {args.get(&quot;order_id&quot;)}...&#x27;</span>,
+)</code></pre></div>
+<h2 id="custom-events">Custom events<a class="anchor" href="#custom-events">#</a></h2>
+<p>To make the UI show a table or a card, use <code>events</code>. The event name is free; the client must know it.</p>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">def</span> _orders_event(result):
+    <span class="tk-k">if</span> <span class="tk-k">not</span> result.get(<span class="tk-s">&#x27;orders&#x27;</span>):
+        <span class="tk-k">return</span> []
+    <span class="tk-k">return</span> [{<span class="tk-s">&#x27;event&#x27;</span>: <span class="tk-s">&#x27;order_list&#x27;</span>, <span class="tk-s">&#x27;items&#x27;</span>: result[<span class="tk-s">&#x27;orders&#x27;</span>], <span class="tk-s">&#x27;count&#x27;</span>: len(result[<span class="tk-s">&#x27;orders&#x27;</span>])}]
+
+ToolSpec(<span class="tk-s">&#x27;list_orders&#x27;</span>, <span class="tk-s">&#x27;...&#x27;</span>, SCHEMA, list_orders, events=_orders_event)</code></pre></div>
+<h2 id="proposing-tool">Proposing tool<a class="anchor" href="#proposing-tool">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">def</span> propose_cancel(user, args, ctx):
+    order = Order.objects.filter(id=args.get(<span class="tk-s">&#x27;order_id&#x27;</span>), user=user, status=<span class="tk-s">&#x27;open&#x27;</span>).first()
+    <span class="tk-k">if</span> <span class="tk-k">not</span> order:
+        <span class="tk-k">return</span> {<span class="tk-s">&#x27;error&#x27;</span>: <span class="tk-s">&#x27;You have no open order with this number.&#x27;</span>}
+    action = ctx.propose(<span class="tk-s">&#x27;cancel_order&#x27;</span>, {<span class="tk-s">&#x27;order_id&#x27;</span>: order.id, <span class="tk-s">&#x27;total&#x27;</span>: order.total})
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;ready&#x27;</span>, <span class="tk-s">&#x27;action_id&#x27;</span>: action.id,
+            <span class="tk-s">&#x27;message&#x27;</span>: <span class="tk-s">&#x27;Cancellation draft is ready; tell the user to press the button. Never say it was cancelled.&#x27;</span>}
+
+ToolSpec(<span class="tk-s">&#x27;propose_cancel&#x27;</span>, <span class="tk-s">&#x27;Draft the cancellation of an open order (does not cancel)&#x27;</span>, SCHEMA, propose_cancel,
+         read_only=<span class="tk-k">False</span>, proposes=<span class="tk-s">&#x27;cancel_order&#x27;</span>, tags=(<span class="tk-s">&#x27;orders&#x27;</span>,))</code></pre></div>
+<div class="adm note"><b class="t">Multi-step dialogs</b><p>For forms that take several question-and-answer turns, pass <code>conversation_mode='create'</code> (or any other name). Until the mode is cleared, the user's short messages ("November 15") do not go to the fast path. Other tools clear the mode with <code>conversation_mode=''</code>, and an action with <code>resets_mode=True</code> clears it after a successful execution.</p></div>
+<h2 id="running-a-tool-directly">Running a tool directly<a class="anchor" href="#running-a-tool-directly">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> tools
+result = tools.execute_tool(<span class="tk-s">&#x27;get_order&#x27;</span>, {<span class="tk-s">&#x27;order_id&#x27;</span>: 5}, user=request.user)</code></pre></div>
+<div class="pn"><a href="plugins.html"><small>Previous</small>← Writing a plugin</a><a href="actions.html"><small>Next</small>Pending actions (ActionKind) →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#handler">handler</a><a class="h2" href="#custom-events">Custom events</a><a class="h2" href="#proposing-tool">Proposing tool</a><a class="h2" href="#running-a-tool-directly">Running a tool directly</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

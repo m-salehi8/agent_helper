@@ -4,13 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-helper-demo"
-version = "0.1.0"
+version = "0.1.0b1"
 description = "Example agent_helper plugin (notes and leave balance) on its own"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Proprietary"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Django",
+    "Programming Language :: Python :: 3",
+]
 dependencies = [
-    "agent-helper==0.1.0",
+    "agent-helper==0.1.0b1",
 ]
 
 [tool.setuptools.packages.find]

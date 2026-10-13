@@ -125,7 +125,7 @@ cd agent_helper_demo && python manage.py test agent_helper agent_helper_demo
 def deployment():
     body = '''
 <h2>چک‌لیست</h2>
-<ul><li>wheelها و <code>wheelhouse</code> روی سرور؛ <code>pip install --no-index</code>.</li>
+<ul><li>wheelها و <code>wheelhouse</code> روی سرور؛ <code>pip install --no-index --pre</code>.</li>
 <li><code>migrate</code>.</li><li>نشانی‌های LLM، مدل سبک و بینایی در تنظیمات یا متغیر محیطی.</li>
 <li>cache مشترک (Redis) برای سقف نرخ در چند پروسه.</li><li>nginx: بدون بافر برای مسیر <code>chat/</code>؛ timeout خواندن ≥ ۱۲۰ ثانیه.</li>
 <li>سرور ASGI/WSGI با worker کافی: هر گفتگوی LLM یک worker را تا پایان استریم نگه می‌دارد.</li></ul>
@@ -157,7 +157,7 @@ MIGRATION_MODULES = {'my_old_label': 'myproject.old_migrations'}   # تاریخ�
 ''') + adm('warn', 'migration دستی', '<p>در این حالت <code>makemigrations</code> باید فقط روی برچسب قدیمی اجرا شود. migration اولیه‌ی خود پکیج (<code>agent_helper/migrations</code>) برای نصب تازه است.</p>') + '''
 <h2>به‌روزرسانی</h2>
 ''' + code('''
-pip install --no-index --find-links dist --upgrade agent-helper
+pip install --no-index --find-links dist --pre --upgrade agent-helper
 python manage.py migrate
 python manage.py check
 ''', 'bash')
@@ -185,14 +185,19 @@ def troubleshooting():
 <h3>آیا می‌شود مدل را برای هر پیام عوض کرد؟</h3><p><code>run_assistant_agent(..., provider=...)</code> ارائه‌دهنده‌ی دلخواه می‌گیرد؛ view پیش‌فرض از تنظیمات می‌خواند.</p>
 <h3>فارسی اجباری است؟</h3><p>قواعد هسته فارسی‌اند؛ با جایگزینی کلیدهای <code>identity</code> و <code>rule.*</code> می‌توانید زبان را عوض کنید. تاریخ‌ها شمسی (django-jalali) هستند.</p>
 <h3>تاریخچه‌ی گفتگو چقدر به مدل داده می‌شود؟</h3><p>همه‌ی پیام‌های user و assistant همان گفتگو؛ خروجی ابزارهای نوبت‌های قبل ذخیره نمی‌شود، پس مدل در صورت نیاز دوباره ابزار را صدا می‌زند.</p>
+<h3>برای محیط عملیاتی آماده است؟</h3><p>هنوز نه؛ این نسخه بتا است (<code>0.1.0b1</code>). سناریوها کامل تست شده‌اند ولی تا 1.0 ممکن است API تغییر کند؛ نسخه را دقیق pin کنید.</p>
 '''
     return page('troubleshooting', 'عیب‌یابی و پرسش‌ها', 'خطاهای رایج و راه‌حل', body)
 
 
 def changelog():
     body = '''
-<h2>0.1.0</h2>
-<ul><li>نخستین نسخه‌ی عمومی.</li>
+<h2>0.1.0b1 — بتا</h2>
+<ul><li>نخستین پیش‌انتشار بتا؛ هنوز نسخه‌ی پایدار نیست و تا 1.0 ممکن است API و تنظیمات تغییر کنند.</li>
+<li>مستندات به دو زبان فارسی و انگلیسی، همراه wheel.</li>
+<li>رشته‌ی نسخه طبق PEP 440 (<code>agent_helper.__version__</code>)؛ نصب با <code>--pre</code> یا نسخه‌ی دقیق.</li></ul>
+<h2>0.1.0 (داخلی)</h2>
+<ul><li>نخستین نسخه‌ی جنریک.</li>
 <li>قرارداد افزونه: <code>ToolSpec</code>، <code>ActionKind</code>، <code>CatalogProvider</code>، <code>PromptFragment</code>، <code>FastRoute</code>، <code>Plugin</code>.</li>
 <li>اقدام معلق جنریک: پیش‌نمایش از <code>ActionKind.preview</code>، ذخیره‌ی وضعیت در هسته، ممیزی خطای اجرا.</li>
 <li>مسیر سریع جنریک با سؤال‌های Jev از افزونه‌ها؛ backend مدل لوکال.</li>

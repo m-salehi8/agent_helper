@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>آموزش: از صفر تا اولین گفتگو — agent-helper</title><meta name="description" content="یک پروژه‌ی خالی، یک افزونه‌ی کوچک با یک ابزار خواندنی و یک اقدام معلق، و اولین درخواست SSE"><link rel="stylesheet" href="style.css"></head>
-<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0b1</bdi></span><span class="beta">بتا</span><span class="sp"></span>
+<a class="lang" href="en/tutorial.html" hreflang="en" lang="en"><bdi dir="ltr">English</bdi></a>
 <input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
 <div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="on" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
-<main><div class="crumb">شروع</div><h1>آموزش: از صفر تا اولین گفتگو</h1><p class="lead">یک پروژه‌ی خالی، یک افزونه‌ی کوچک با یک ابزار خواندنی و یک اقدام معلق، و اولین درخواست <bdi dir="ltr">SSE</bdi></p>
+<main><div class="crumb">شروع</div><div class="beta-banner" role="note"><b>نسخه‌ی بتا (0.1.0<bdi dir="ltr">b1</bdi>).</b> این پکیج هنوز به‌صورت پایدار منتشر نشده است؛ تا نسخه‌ی 1.0 ممکن است <bdi dir="ltr">API</bdi> و تنظیمات تغییر کنند.</div><h1>آموزش: از صفر تا اولین گفتگو</h1><p class="lead">یک پروژه‌ی خالی، یک افزونه‌ی کوچک با یک ابزار خواندنی و یک اقدام معلق، و اولین درخواست <bdi dir="ltr">SSE</bdi></p>
 <p>در این آموزش یک پروژه‌ی خالی می‌سازیم و افزونه‌ای به نام <code>notes</code> می‌نویسیم که یادداشت‌های کاربر را می‌خواند و
 افزودن یادداشت را <b>پیشنهاد</b> می‌کند (ذخیره فقط با دکمه‌ی کاربر). کد کامل مشابه همین در پکیج <code>agent-helper-demo</code> هست.</p>
 <h2 id="۱-پروژه-و-نصب">۱. پروژه و نصب<a class="anchor" href="#۱-پروژه-و-نصب">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>python -m venv venv &amp;&amp; . venv/bin/activate
-pip install --no-index --find-links wheelhouse --find-links dist agent-helper
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code>python -m venv venv &amp;&amp; . venv/bin/activate
+pip install --no-index --find-links wheelhouse --find-links dist --pre agent-helper
 django-admin startproject mysite . &amp;&amp; python manage.py startapp notes</code></pre></div>
 <h2 id="۲-مدل-داده-ی-دامنه">۲. مدل داده‌ی دامنه<a class="anchor" href="#۲-مدل-داده-ی-دامنه">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># notes/models.py</span>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-c"># notes/models.py</span>
 <span class="tk-k">from</span> django.conf <span class="tk-k">import</span> settings
 <span class="tk-k">from</span> django.db <span class="tk-k">import</span> models
 
@@ -21,7 +22,7 @@ django-admin startproject mysite . &amp;&amp; python manage.py startapp notes</c
     text = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=<span class="tk-k">True</span>)</code></pre></div>
 <h2 id="۳-افزونه">۳. افزونه<a class="anchor" href="#۳-افزونه">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># notes/plugin.py</span>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-c"># notes/plugin.py</span>
 <span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> actions
 <span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> ActionKind, Plugin, PromptFragment, ToolSpec
 
@@ -67,7 +68,7 @@ PLUGIN = Plugin(
                         propose_schema={<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;required&#x27;</span>: [<span class="tk-s">&#x27;text&#x27;</span>]})],
     prompt_fragments=[PromptFragment(
         <span class="tk-s">&#x27;یادداشت‌ها: برای دیدن list_my_notes و برای افزودن propose_add_note؛ هرگز نگو ذخیره شد.&#x27;</span>, order=60)],
-)</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># notes/apps.py</span>
+)</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-c"># notes/apps.py</span>
 <span class="tk-k">from</span> django.apps <span class="tk-k">import</span> AppConfig
 
 <span class="tk-k">class</span> NotesConfig(AppConfig):
@@ -79,7 +80,7 @@ PLUGIN = Plugin(
         <span class="tk-k">from</span> notes.plugin <span class="tk-k">import</span> PLUGIN
         agent_helper.register(PLUGIN)</code></pre></div>
 <h2 id="۴-تنظیمات-و-url">۴. تنظیمات و <bdi dir="ltr">URL</bdi><a class="anchor" href="#۴-تنظیمات-و-url">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># mysite/settings.py</span>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-c"># mysite/settings.py</span>
 INSTALLED_APPS += [<span class="tk-s">&#x27;rest_framework&#x27;</span>, <span class="tk-s">&#x27;django_jalali&#x27;</span>, <span class="tk-s">&#x27;agent_helper&#x27;</span>, <span class="tk-s">&#x27;notes&#x27;</span>]
 
 AGENT_HELPER = {
@@ -91,21 +92,21 @@ AGENT_HELPER = {
 
 REST_FRAMEWORK = {
     <span class="tk-s">&#x27;DEFAULT_AUTHENTICATION_CLASSES&#x27;</span>: [<span class="tk-s">&#x27;rest_framework.authentication.SessionAuthentication&#x27;</span>],
-}</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># mysite/urls.py</span>
+}</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-c"># mysite/urls.py</span>
 <span class="tk-k">from</span> django.contrib <span class="tk-k">import</span> admin
 <span class="tk-k">from</span> django.urls <span class="tk-k">import</span> include, path
 
 urlpatterns = [
     path(<span class="tk-s">&#x27;admin/&#x27;</span>, admin.site.urls),
     path(<span class="tk-s">&#x27;api/assistant/&#x27;</span>, include(<span class="tk-s">&#x27;agent_helper.urls&#x27;</span>)),
-]</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>python manage.py makemigrations notes &amp;&amp; python manage.py migrate
+]</code></pre></div><div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code>python manage.py makemigrations notes &amp;&amp; python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver</code></pre></div>
 <h2 id="۵-اولین-گفتگو">۵. اولین گفتگو<a class="anchor" href="#۵-اولین-گفتگو">#</a></h2>
 <p>با کاربری که وارد شده (یا توکن <bdi dir="ltr">JWT</bdi> اگر پروژه‌تان <bdi dir="ltr">JWT</bdi> دارد):</p>
-<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>curl -N -X POST http://127.0.0.1:8000/api/assistant/chat/ \
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code>curl -N -X POST http://127.0.0.1:8000/api/assistant/chat/ \
      -H &#x27;Content-Type: application/json&#x27; -H &#x27;Authorization: Bearer &lt;token&gt;&#x27; \
-     -d &#x27;{&quot;message&quot;: &quot;یادداشت کن فردا ساعت ۱۰ جلسه دارم&quot;}&#x27;</code></pre></div><div class="pre"><span class="lang"></span><button type="button">کپی</button><pre><code>data: {&quot;event&quot;: &quot;tool_status&quot;, &quot;status&quot;: &quot;در حال اجرای ابزار propose_add_note...&quot;}
+     -d &#x27;{&quot;message&quot;: &quot;یادداشت کن فردا ساعت ۱۰ جلسه دارم&quot;}&#x27;</code></pre></div><div class="pre"><span class="lang"></span><button type="button" data-done="کپی شد">کپی</button><pre><code>data: {&quot;event&quot;: &quot;tool_status&quot;, &quot;status&quot;: &quot;در حال اجرای ابزار propose_add_note...&quot;}
 
 data: {&quot;event&quot;: &quot;pending_action&quot;, &quot;action_id&quot;: 7, &quot;kind&quot;: &quot;add_note&quot;, &quot;text&quot;: &quot;فردا ساعت ۱۰ جلسه&quot;, &quot;expires_at&quot;: &quot;1405/07/20 14:10&quot;}
 
@@ -113,10 +114,10 @@ data: {&quot;event&quot;: &quot;token&quot;, &quot;text&quot;: &quot;پیش‌ن
 
 data: {&quot;event&quot;: &quot;done&quot;, &quot;conversation_id&quot;: 3, &quot;message_id&quot;: 12, &quot;path&quot;: &quot;llm&quot;}</code></pre></div>
 <p>کاربر دکمه را می‌زند و رابط کاربری تایید را می‌فرستد:</p>
-<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button">کپی</button><pre><code>curl -X POST http://127.0.0.1:8000/api/assistant/actions/7/confirm/ -H &#x27;Authorization: Bearer &lt;token&gt;&#x27;
+<div class="pre"><span class="lang"><bdi dir="ltr">Shell</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code>curl -X POST http://127.0.0.1:8000/api/assistant/actions/7/confirm/ -H &#x27;Authorization: Bearer &lt;token&gt;&#x27;
 # {&quot;status&quot;: &quot;confirmed&quot;, &quot;message&quot;: &quot;یادداشت ذخیره شد.&quot;, &quot;results&quot;: [...]}</code></pre></div>
 <h2 id="۶-تست">۶. تست<a class="anchor" href="#۶-تست">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-c"># notes/tests.py</span>
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-c"># notes/tests.py</span>
 <span class="tk-k">from</span> django.test <span class="tk-k">import</span> TestCase
 <span class="tk-k">from</span> agent_helper.llm <span class="tk-k">import</span> LLMResponse, MockProvider, ToolCall, run_assistant_agent
 <span class="tk-k">from</span> agent_helper.models <span class="tk-k">import</span> AssistantConversation
@@ -138,8 +139,8 @@ data: {&quot;event&quot;: &quot;done&quot;, &quot;conversation_id&quot;: 3, &quo
         self.assertTrue(any(e[<span class="tk-s">&#x27;event&#x27;</span>] == <span class="tk-s">&#x27;pending_action&#x27;</span> <span class="tk-k">for</span> e <span class="tk-k">in</span> events))
         self.assertFalse(user.notes.exists())</code></pre></div>
 <div class="adm tip"><b class="t">بعدی چه؟</b><p><a href="fast-routes.html">مسیر سریع</a> برای پیام‌های پرتکرار بدون <bdi dir="ltr">LLM</bdi>، <a href="frontend.html">اتصال رابط کاربری</a> و <a href="deployment.html">استقرار</a>.</p></div>
-<div class="pn"><a href="installation.html"><small>قبلی</small>→ نصب</a><a href="concepts.html"><small>بعدی</small>مفاهیم و معماری ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<div class="pn"><a href="installation.html"><small>قبلی</small>→ نصب</a><a href="concepts.html"><small>بعدی</small>مفاهیم و معماری ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0<bdi dir="ltr">b1</bdi> (<bdi dir="ltr">beta</bdi>) · مستندات پکیج</footer></main>
 <aside class="toc"><b>در این صفحه</b><a class="h2" href="#۱-پروژه-و-نصب">۱. پروژه و نصب</a><a class="h2" href="#۲-مدل-داده-ی-دامنه">۲. مدل داده‌ی دامنه</a><a class="h2" href="#۳-افزونه">۳. افزونه</a><a class="h2" href="#۴-تنظیمات-و-url">۴. تنظیمات و <bdi dir="ltr">URL</bdi></a><a class="h2" href="#۵-اولین-گفتگو">۵. اولین گفتگو</a><a class="h2" href="#۶-تست">۶. تست</a></aside></div><script>
-document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
-const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
 </script></body></html>

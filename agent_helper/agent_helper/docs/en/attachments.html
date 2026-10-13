@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image attachments — agent-helper</title><meta name="description" content="Sending an image, extraction with a vision model and use in a plugin"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../attachments.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="on" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Guide</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Image attachments</h1><p class="lead">Sending an image, extraction with a vision model and use in a plugin</p>
+<p>The user can send an image with a message (e.g. a photo of an invoice). The core stores the image, extracts its data as JSON
+with a vision model, runs arithmetic checks and appends the extracted text to the message so the LLM can use it.</p>
+<h2 id="sending">Sending<a class="anchor" href="#sending">#</a></h2>
+<div class="pre"><span class="lang">JSON</span><button type="button" data-done="Copied">Copy</button><pre><code>{&quot;message&quot;: &quot;Register this invoice&quot;, &quot;image&quot;: &quot;data:image/jpeg;base64,/9j/4AAQ...&quot;}</code></pre></div>
+<ul><li>Formats: png, jpg, webp; at most <code>MAX_UPLOAD_BYTES</code> (5 MB by default).</li>
+<li>Storage path: <code>&lt;UPLOAD_DIR&gt;/&lt;user_id&gt;/&lt;uuid&gt;.&lt;ext&gt;</code> in <code>default_storage</code>.</li>
+<li>With an attachment the fast path is skipped and the plugins' <code>attachment_tags</code> are selected.</li></ul>
+<h2 id="events">Events<a class="anchor" href="#events">#</a></h2>
+<div class="pre"><span class="lang"></span><button type="button" data-done="Copied">Copy</button><pre><code>data: {&quot;event&quot;: &quot;tool_status&quot;, &quot;status&quot;: &quot;Reading the attached image...&quot;}
+data: {&quot;event&quot;: &quot;attachment_data&quot;, &quot;data&quot;: {&quot;seller&quot;: &quot;...&quot;, &quot;total&quot;: 23370000, &quot;items&quot;: [...]}, &quot;warning&quot;: &quot;&quot;}</code></pre></div>
+<p>If reading fails, an <code>error</code> event is sent; the message is stored but the LLM is not run.</p>
+<h2 id="vision-model-configuration">Vision model configuration<a class="anchor" href="#vision-model-configuration">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>AGENT_HELPER = {
+    <span class="tk-c"># default: the same LLM_* settings</span>
+    <span class="tk-s">&#x27;VISION_BASE_URL&#x27;</span>: <span class="tk-s">&#x27;http://vision.internal:8000/v1&#x27;</span>,
+    <span class="tk-s">&#x27;VISION_MODEL&#x27;</span>: <span class="tk-s">&#x27;qwen2.5-vl&#x27;</span>,
+    <span class="tk-s">&#x27;VISION_TIMEOUT&#x27;</span>: 90,
+}</code></pre></div>
+<h2 id="using-it-in-a-plugin">Using it in a plugin<a class="anchor" href="#using-it-in-a-plugin">#</a></h2>
+<p>The file path is stored in the user message content (<code>message.content["attachment"]</code>); a plugin can link it to domain data
+(for example save it in a form's file field). Write a prompt rule tagged for attachments telling the model to treat image values as the form source and to ask about unclear values.</p>
+<div class="adm warn"><b class="t">Machine-read values</b><p>Image extraction can be wrong; always show the values in the preview card and leave execution to the button.</p></div>
+<div class="pn"><a href="prompts.html"><small>Previous</small>← Prompt and tool selection</a><a href="http-api.html"><small>Next</small>HTTP API and SSE events →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#sending">Sending</a><a class="h2" href="#events">Events</a><a class="h2" href="#vision-model-configuration">Vision model configuration</a><a class="h2" href="#using-it-in-a-plugin">Using it in a plugin</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

@@ -1,23 +1,24 @@
 <!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>پیوست تصویر — agent-helper</title><meta name="description" content="ارسال تصویر، استخراج با مدل بینایی و استفاده در افزونه"><link rel="stylesheet" href="style.css"></head>
-<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0b1</bdi></span><span class="beta">بتا</span><span class="sp"></span>
+<a class="lang" href="en/attachments.html" hreflang="en" lang="en"><bdi dir="ltr">English</bdi></a>
 <input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
 <div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="on" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
-<main><div class="crumb">راهنما</div><h1>پیوست تصویر</h1><p class="lead">ارسال تصویر، استخراج با مدل بینایی و استفاده در افزونه</p>
+<main><div class="crumb">راهنما</div><div class="beta-banner" role="note"><b>نسخه‌ی بتا (0.1.0<bdi dir="ltr">b1</bdi>).</b> این پکیج هنوز به‌صورت پایدار منتشر نشده است؛ تا نسخه‌ی 1.0 ممکن است <bdi dir="ltr">API</bdi> و تنظیمات تغییر کنند.</div><h1>پیوست تصویر</h1><p class="lead">ارسال تصویر، استخراج با مدل بینایی و استفاده در افزونه</p>
 <p>کاربر می‌تواند همراه پیام یک تصویر بفرستد (مثلاً عکس فاکتور). هسته تصویر را ذخیره می‌کند، با مدل بینایی اطلاعات را
 به <bdi dir="ltr">JSON</bdi> استخراج می‌کند، کنترل حسابی انجام می‌دهد و متن استخراج‌شده را به پیام اضافه می‌کند تا <bdi dir="ltr">LLM</bdi> از آن استفاده کند.</p>
 <h2 id="ارسال">ارسال<a class="anchor" href="#ارسال">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">JSON</bdi></span><button type="button">کپی</button><pre><code>{&quot;message&quot;: &quot;این فاکتور رو ثبت کن&quot;, &quot;image&quot;: &quot;data:image/jpeg;base64,/9j/4AAQ...&quot;}</code></pre></div>
+<div class="pre"><span class="lang"><bdi dir="ltr">JSON</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code>{&quot;message&quot;: &quot;این فاکتور رو ثبت کن&quot;, &quot;image&quot;: &quot;data:image/jpeg;base64,/9j/4AAQ...&quot;}</code></pre></div>
 <ul><li>فرمت‌ها: <bdi dir="ltr">png</bdi>، <bdi dir="ltr">jpg</bdi>، <bdi dir="ltr">webp</bdi>؛ حداکثر <code>MAX_UPLOAD_BYTES</code> (پیش‌فرض ۵ مگابایت).</li>
 <li>مسیر ذخیره: <code>&lt;UPLOAD_DIR&gt;/&lt;user_id&gt;/&lt;uuid&gt;.&lt;ext&gt;</code> در <code>default_storage</code>.</li>
 <li>با پیوست، مسیر سریع کنار گذاشته می‌شود و <code>attachment_tags</code> افزونه‌ها انتخاب می‌شوند.</li></ul>
 <h2 id="رویدادها">رویدادها<a class="anchor" href="#رویدادها">#</a></h2>
-<div class="pre"><span class="lang"></span><button type="button">کپی</button><pre><code>data: {&quot;event&quot;: &quot;tool_status&quot;, &quot;status&quot;: &quot;در حال خواندن تصویر پیوست...&quot;}
+<div class="pre"><span class="lang"></span><button type="button" data-done="کپی شد">کپی</button><pre><code>data: {&quot;event&quot;: &quot;tool_status&quot;, &quot;status&quot;: &quot;در حال خواندن تصویر پیوست...&quot;}
 data: {&quot;event&quot;: &quot;attachment_data&quot;, &quot;data&quot;: {&quot;seller&quot;: &quot;...&quot;, &quot;total&quot;: 23370000, &quot;items&quot;: [...]}, &quot;warning&quot;: &quot;&quot;}</code></pre></div>
 <p>اگر خواندن ناموفق باشد، رویداد <code>error</code> می‌آید و پیام ثبت می‌شود ولی <bdi dir="ltr">LLM</bdi> اجرا نمی‌شود.</p>
 <h2 id="پیکربندی-مدل-بینایی">پیکربندی مدل بینایی<a class="anchor" href="#پیکربندی-مدل-بینایی">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code>AGENT_HELPER = {
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code>AGENT_HELPER = {
     <span class="tk-c"># پیش‌فرض: همان LLM_*</span>
     <span class="tk-s">&#x27;VISION_BASE_URL&#x27;</span>: <span class="tk-s">&#x27;http://vision.internal:8000/v1&#x27;</span>,
     <span class="tk-s">&#x27;VISION_MODEL&#x27;</span>: <span class="tk-s">&#x27;qwen2.5-vl&#x27;</span>,
@@ -27,8 +28,8 @@ data: {&quot;event&quot;: &quot;attachment_data&quot;, &quot;data&quot;: {&quot;
 <p>مسیر فایل در محتوای پیام کاربر (<code>message.content["attachment"]</code>) ذخیره است؛ افزونه می‌تواند آن را به داده‌ی دامنه وصل کند
 (مثلاً آن را در فیلد فایل یک فرم ذخیره کند). یک قاعده‌ی پرامپت با برچسب پیوست بنویسید که مدل مقدارهای تصویر را منبع فرم بداند و مقدار مبهم را بپرسد.</p>
 <div class="adm warn"><b class="t">مقدارهای ماشینی</b><p>استخراج تصویر ممکن است خطا داشته باشد؛ همیشه در کارت پیش‌نمایش به کاربر نشان دهید و اجرا را به دکمه بسپارید.</p></div>
-<div class="pn"><a href="prompts.html"><small>قبلی</small>→ پرامپت و انتخاب ابزار</a><a href="http-api.html"><small>بعدی</small><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi> ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<div class="pn"><a href="prompts.html"><small>قبلی</small>→ پرامپت و انتخاب ابزار</a><a href="http-api.html"><small>بعدی</small><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi> ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0<bdi dir="ltr">b1</bdi> (<bdi dir="ltr">beta</bdi>) · مستندات پکیج</footer></main>
 <aside class="toc"><b>در این صفحه</b><a class="h2" href="#ارسال">ارسال</a><a class="h2" href="#رویدادها">رویدادها</a><a class="h2" href="#پیکربندی-مدل-بینایی">پیکربندی مدل بینایی</a><a class="h2" href="#استفاده-در-افزونه">استفاده در افزونه</a></aside></div><script>
-document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
-const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
 </script></body></html>

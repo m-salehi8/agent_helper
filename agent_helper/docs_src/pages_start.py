@@ -62,9 +62,9 @@ pip download --only-binary=:all: -d wheelhouse \\
     Django==5.0.4 djangorestframework==3.15.1 django-jalali==6.2.1 jdatetime==5.0.0 requests==2.32.3
 ''', 'bash') + '''</li>
 <li><b>نصب روی سرور:</b>''' + code('''
-pip install --no-index --find-links wheelhouse --find-links dist agent-helper
+pip install --no-index --find-links wheelhouse --find-links dist --pre agent-helper
 ''', 'bash') + '''</li></ol>
-''' + adm('tip', 'نسخه‌ها', '<p>نسخه‌های بالا همان‌هایی است که تست شده‌اند. نسخه‌ی پایتون ماشین دانلود و سرور باید یکی باشد (wheelهای باینری مثل <code>charset-normalizer</code>).</p>') + '''
+''' + adm('note', 'نسخه‌ی بتا', '<p>نسخه‌ی فعلی پیش‌انتشار است (<code>0.1.0b1</code>)؛ pip آن را فقط با <code>--pre</code> یا نسخه‌ی دقیق (<code>agent-helper==0.1.0b1</code>) انتخاب می‌کند.</p>') + adm('tip', 'نسخه‌ها', '<p>نسخه‌های بالا همان‌هایی است که تست شده‌اند. نسخه‌ی پایتون ماشین دانلود و سرور باید یکی باشد (wheelهای باینری مثل <code>charset-normalizer</code>).</p>') + '''
 <h2>نصب از سورس (توسعه)</h2>
 ''' + code('''
 pip install -e packages/agent_helper
@@ -108,7 +108,7 @@ def tutorial():
 <h2>۱. پروژه و نصب</h2>
 ''' + code('''
 python -m venv venv && . venv/bin/activate
-pip install --no-index --find-links wheelhouse --find-links dist agent-helper
+pip install --no-index --find-links wheelhouse --find-links dist --pre agent-helper
 django-admin startproject mysite . && python manage.py startapp notes
 ''', 'bash') + '''
 <h2>۲. مدل داده‌ی دامنه</h2>

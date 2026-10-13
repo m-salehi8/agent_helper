@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connecting a frontend — agent-helper</title><meta name="description" content="Reading the SSE stream with fetch, the action card and deployment tips"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../frontend.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="on" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Reference</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Connecting a frontend</h1><p class="lead">Reading the SSE stream with fetch, the action card and deployment tips</p>
+<p><code>EventSource</code> only sends GET; for a POST with an auth header use <code>fetch</code> and read the stream.</p>
+<h2 id="browser-client">Browser client<a class="anchor" href="#browser-client">#</a></h2>
+<div class="pre"><span class="lang">JavaScript</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">async</span> <span class="tk-k">function</span> chat(message, conversationId, token, onEvent) {
+  <span class="tk-k">const</span> res = <span class="tk-k">await</span> fetch(<span class="tk-s">&#x27;/api/assistant/chat/&#x27;</span>, {
+    method: <span class="tk-s">&#x27;POST&#x27;</span>,
+    headers: {<span class="tk-s">&#x27;Content-Type&#x27;</span>: <span class="tk-s">&#x27;application/json&#x27;</span>, <span class="tk-s">&#x27;Authorization&#x27;</span>: <span class="tk-s">&#x27;Bearer &#x27;</span> + token},
+    body: JSON.stringify({message, conversation_id: conversationId}),
+  });
+  <span class="tk-k">const</span> reader = res.body.getReader();
+  <span class="tk-k">const</span> decoder = <span class="tk-k">new</span> TextDecoder();
+  <span class="tk-k">let</span> buffer = <span class="tk-s">&#x27;&#x27;</span>;
+  while (true) {
+    <span class="tk-k">const</span> {value, done} = <span class="tk-k">await</span> reader.read();
+    <span class="tk-k">if</span> (done) break;
+    buffer += decoder.decode(value, {stream: true});
+    <span class="tk-k">const</span> parts = buffer.split(<span class="tk-s">&#x27;\n\n&#x27;</span>);
+    buffer = parts.pop();
+    <span class="tk-k">for</span> (<span class="tk-k">const</span> part of parts) {
+      <span class="tk-k">if</span> (part.startsWith(<span class="tk-s">&#x27;data: &#x27;</span>)) onEvent(JSON.parse(part.slice(6)));
+    }
+  }
+}
+
+<span class="tk-k">let</span> conversationId = null;
+chat(<span class="tk-s">&#x27;Show my orders&#x27;</span>, conversationId, TOKEN, ev =&gt; {
+  <span class="tk-k">if</span> (ev.event === <span class="tk-s">&#x27;token&#x27;</span>) appendText(ev.text);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (ev.event === <span class="tk-s">&#x27;tool_status&#x27;</span>) showStatus(ev.status);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (ev.event === <span class="tk-s">&#x27;pending_action&#x27;</span>) renderActionCard(ev);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (ev.event === <span class="tk-s">&#x27;error&#x27;</span>) showError(ev.message);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (ev.event === <span class="tk-s">&#x27;done&#x27;</span>) conversationId = ev.conversation_id;
+});</code></pre></div>
+<h2 id="action-card">Action card<a class="anchor" href="#action-card">#</a></h2>
+<div class="pre"><span class="lang">JavaScript</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">function</span> renderActionCard(ev) {
+  <span class="tk-c">// show ev.kind and the preview fields</span>
+  confirmBtn.onclick = () =&gt; act(ev.action_id, <span class="tk-s">&#x27;confirm&#x27;</span>, {});
+  cancelBtn.onclick = () =&gt; act(ev.action_id, <span class="tk-s">&#x27;cancel&#x27;</span>);
+}
+
+<span class="tk-k">async</span> <span class="tk-k">function</span> act(id, op, body) {
+  <span class="tk-k">const</span> res = <span class="tk-k">await</span> fetch(<span class="tk-s">`/api/assistant/actions/${id}/${op}/`</span>, {
+    method: <span class="tk-s">&#x27;POST&#x27;</span>,
+    headers: {<span class="tk-s">&#x27;Content-Type&#x27;</span>: <span class="tk-s">&#x27;application/json&#x27;</span>, <span class="tk-s">&#x27;Authorization&#x27;</span>: <span class="tk-s">&#x27;Bearer &#x27;</span> + TOKEN},
+    body: JSON.stringify(body || {}),
+  });
+  <span class="tk-k">const</span> data = <span class="tk-k">await</span> res.json();
+  showResult(res.ok ? data.message : data.error);
+}</code></pre></div>
+<h2 id="tips">Tips<a class="anchor" href="#tips">#</a></h2>
+<ul><li>Keep the conversation id after <code>done</code> so the next message continues the same conversation.</li>
+<li>Disable the send button until <code>done</code> or <code>error</code> arrives.</li>
+<li>Disable the card after <code>expires_at</code>; the server also rejects expired actions.</li>
+<li>Ignore unknown events so a new plugin does not break the client.</li>
+<li>Behind nginx: <code>proxy_buffering off</code>, or the <code>X-Accel-Buffering: no</code> header the server already sends.</li></ul>
+<h2 id="python-script-or-integration-test">Python (script or integration test)<a class="anchor" href="#python-script-or-integration-test">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">import</span> json, requests
+
+<span class="tk-k">with</span> requests.post(url + <span class="tk-s">&#x27;/api/assistant/chat/&#x27;</span>, json={<span class="tk-s">&#x27;message&#x27;</span>: <span class="tk-s">&#x27;hello&#x27;</span>},
+                   headers={<span class="tk-s">&#x27;Authorization&#x27;</span>: <span class="tk-s">&#x27;Bearer &#x27;</span> + token}, stream=<span class="tk-k">True</span>) <span class="tk-k">as</span> r:
+    <span class="tk-k">for</span> block <span class="tk-k">in</span> r.content.decode(<span class="tk-s">&#x27;utf-8&#x27;</span>).split(<span class="tk-s">&#x27;\n\n&#x27;</span>):
+        <span class="tk-k">if</span> block.startswith(<span class="tk-s">&#x27;data: &#x27;</span>):
+            print(json.loads(block[6:]))</code></pre></div>
+<div class="pn"><a href="http-api.html"><small>Previous</small>← HTTP API and SSE events</a><a href="python-api.html"><small>Next</small>Python reference →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#browser-client">Browser client</a><a class="h2" href="#action-card">Action card</a><a class="h2" href="#tips">Tips</a><a class="h2" href="#python-script-or-integration-test">Python (script or integration test)</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

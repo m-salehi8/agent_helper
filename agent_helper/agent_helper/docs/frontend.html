@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>اتصال رابط کاربری — agent-helper</title><meta name="description" content="خواندن استریم SSE با fetch، کارت اقدام و نکته‌های استقرار"><link rel="stylesheet" href="style.css"></head>
-<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0b1</bdi></span><span class="beta">بتا</span><span class="sp"></span>
+<a class="lang" href="en/frontend.html" hreflang="en" lang="en"><bdi dir="ltr">English</bdi></a>
 <input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
 <div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="on" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
-<main><div class="crumb">مرجع</div><h1>اتصال رابط کاربری</h1><p class="lead">خواندن استریم <bdi dir="ltr">SSE</bdi> با <bdi dir="ltr">fetch</bdi>، کارت اقدام و نکته‌های استقرار</p>
+<main><div class="crumb">مرجع</div><div class="beta-banner" role="note"><b>نسخه‌ی بتا (0.1.0<bdi dir="ltr">b1</bdi>).</b> این پکیج هنوز به‌صورت پایدار منتشر نشده است؛ تا نسخه‌ی 1.0 ممکن است <bdi dir="ltr">API</bdi> و تنظیمات تغییر کنند.</div><h1>اتصال رابط کاربری</h1><p class="lead">خواندن استریم <bdi dir="ltr">SSE</bdi> با <bdi dir="ltr">fetch</bdi>، کارت اقدام و نکته‌های استقرار</p>
 <p><code>EventSource</code> فقط <bdi dir="ltr">GET</bdi> می‌فرستد؛ برای <bdi dir="ltr">POST</bdi> با هدر احراز هویت از <code>fetch</code> و خواندن استریم استفاده کنید.</p>
 <h2 id="کلاینت-مرورگر">کلاینت مرورگر<a class="anchor" href="#کلاینت-مرورگر">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">JavaScript</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">async</span> <span class="tk-k">function</span> chat(message, conversationId, token, onEvent) {
+<div class="pre"><span class="lang"><bdi dir="ltr">JavaScript</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-k">async</span> <span class="tk-k">function</span> chat(message, conversationId, token, onEvent) {
   <span class="tk-k">const</span> res = <span class="tk-k">await</span> fetch(<span class="tk-s">&#x27;/api/assistant/chat/&#x27;</span>, {
     method: <span class="tk-s">&#x27;POST&#x27;</span>,
     headers: {<span class="tk-s">&#x27;Content-Type&#x27;</span>: <span class="tk-s">&#x27;application/json&#x27;</span>, <span class="tk-s">&#x27;Authorization&#x27;</span>: <span class="tk-s">&#x27;Bearer &#x27;</span> + token},
@@ -37,7 +38,7 @@ chat(<span class="tk-s">&#x27;سفارش‌هایم را نشان بده&#x27;</
   <span class="tk-k">else</span> <span class="tk-k">if</span> (ev.event === <span class="tk-s">&#x27;done&#x27;</span>) conversationId = ev.conversation_id;
 });</code></pre></div>
 <h2 id="کارت-اقدام">کارت اقدام<a class="anchor" href="#کارت-اقدام">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">JavaScript</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">function</span> renderActionCard(ev) {
+<div class="pre"><span class="lang"><bdi dir="ltr">JavaScript</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-k">function</span> renderActionCard(ev) {
   <span class="tk-c">// ev.kind و فیلدهای preview را نمایش بدهید</span>
   confirmBtn.onclick = () =&gt; act(ev.action_id, <span class="tk-s">&#x27;confirm&#x27;</span>, {});
   cancelBtn.onclick = () =&gt; act(ev.action_id, <span class="tk-s">&#x27;cancel&#x27;</span>);
@@ -59,15 +60,15 @@ chat(<span class="tk-s">&#x27;سفارش‌هایم را نشان بده&#x27;</
 <li>رویدادهای ناشناخته را نادیده بگیرید تا افزونه‌ی تازه کلاینت را نشکند.</li>
 <li>پشت <bdi dir="ltr">nginx:</bdi> <code>proxy_buffering off</code> یا همان هدر <code>X-Accel-Buffering: no</code> که سرور می‌فرستد.</li></ul>
 <h2 id="python-اسکریپت-یا-تست-یکپارچه"><bdi dir="ltr">Python</bdi> (اسکریپت یا تست یکپارچه)<a class="anchor" href="#python-اسکریپت-یا-تست-یکپارچه">#</a></h2>
-<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button">کپی</button><pre><code><span class="tk-k">import</span> json, requests
+<div class="pre"><span class="lang"><bdi dir="ltr">Python</bdi></span><button type="button" data-done="کپی شد">کپی</button><pre><code><span class="tk-k">import</span> json, requests
 
 <span class="tk-k">with</span> requests.post(url + <span class="tk-s">&#x27;/api/assistant/chat/&#x27;</span>, json={<span class="tk-s">&#x27;message&#x27;</span>: <span class="tk-s">&#x27;سلام&#x27;</span>},
                    headers={<span class="tk-s">&#x27;Authorization&#x27;</span>: <span class="tk-s">&#x27;Bearer &#x27;</span> + token}, stream=<span class="tk-k">True</span>) <span class="tk-k">as</span> r:
-    <span class="tk-k">for</span> line <span class="tk-k">in</span> r.iter_lines(decode_unicode=<span class="tk-k">True</span>):
-        <span class="tk-k">if</span> line.startswith(<span class="tk-s">&#x27;data: &#x27;</span>):
-            print(json.loads(line[6:]))</code></pre></div>
-<div class="pn"><a href="http-api.html"><small>قبلی</small>→ <bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a href="python-api.html"><small>بعدی</small>مرجع پایتون ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+    <span class="tk-k">for</span> block <span class="tk-k">in</span> r.content.decode(<span class="tk-s">&#x27;utf-8&#x27;</span>).split(<span class="tk-s">&#x27;\n\n&#x27;</span>):
+        <span class="tk-k">if</span> block.startswith(<span class="tk-s">&#x27;data: &#x27;</span>):
+            print(json.loads(block[6:]))</code></pre></div>
+<div class="pn"><a href="http-api.html"><small>قبلی</small>→ <bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a href="python-api.html"><small>بعدی</small>مرجع پایتون ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0<bdi dir="ltr">b1</bdi> (<bdi dir="ltr">beta</bdi>) · مستندات پکیج</footer></main>
 <aside class="toc"><b>در این صفحه</b><a class="h2" href="#کلاینت-مرورگر">کلاینت مرورگر</a><a class="h2" href="#کارت-اقدام">کارت اقدام</a><a class="h2" href="#نکته-ها">نکته‌ها</a><a class="h2" href="#python-اسکریپت-یا-تست-یکپارچه"><bdi dir="ltr">Python</bdi> (اسکریپت یا تست یکپارچه)</a></aside></div><script>
-document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
-const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
 </script></body></html>

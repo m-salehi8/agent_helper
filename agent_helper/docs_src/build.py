@@ -1,4 +1,4 @@
-"""ساخت مستندات پکیج agent_helper در agent_helper/docs (همراه wheel منتشر می‌شود).
+"""ساخت مستندات پکیج agent_helper در agent_helper/docs (فارسی) و agent_helper/docs/en (انگلیسی)؛ همراه wheel منتشر می‌شود.
 
 اجرا: python packages/agent_helper/docs_src/build.py
 """
@@ -9,34 +9,35 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import lib  # noqa: E402
-import pages_guide as G  # noqa: E402
-import pages_ops as O  # noqa: E402
-import pages_ref as R  # noqa: E402
-import pages_start as S  # noqa: E402
 
-BUILDERS = {
-    'index': S.index, 'installation': S.installation, 'tutorial': S.tutorial, 'concepts': S.concepts,
-    'configuration': S.configuration, 'plugins': G.plugins, 'tools': G.tools, 'actions': G.actions_page,
-    'fast-routes': G.fast_routes, 'prompts': G.prompts, 'attachments': G.attachments, 'http-api': R.http_api,
-    'frontend': R.frontend, 'python-api': R.python_api, 'settings-ref': R.settings_ref, 'security': O.security,
-    'observability': O.observability, 'testing': O.testing, 'deployment': O.deployment,
-    'troubleshooting': O.troubleshooting, 'changelog': O.changelog,
-}
+MODULES = {'fa': ('pages_start', 'pages_guide', 'pages_ref', 'pages_ops'),
+           'en': ('en_start', 'en_guide', 'en_ref', 'en_ops')}
+NAMES = {'actions': 'actions_page', 'fast-routes': 'fast_routes', 'http-api': 'http_api', 'python-api': 'python_api',
+         'settings-ref': 'settings_ref'}
+
+
+def builders(lang):
+    mods = [__import__(m) for m in MODULES[lang]]
+    out = {}
+    for slug, _t, _g in lib.PAGES:
+        name = NAMES.get(slug, slug)
+        out[slug] = next(getattr(m, name) for m in mods if hasattr(m, name))
+    return out
 
 
 def main():
-    assert set(BUILDERS) == {p[0] for p in lib.PAGES}, set(BUILDERS) ^ {p[0] for p in lib.PAGES}
-    out = os.path.join(HERE, '..', 'agent_helper', 'docs')
-    os.makedirs(out, exist_ok=True)
-    sizes = {}
-    for slug, build in BUILDERS.items():
-        html = build()
-        with open(os.path.join(out, f'{slug}.html'), 'w', encoding='utf-8') as fh:
-            fh.write(html)
-        sizes[slug] = len(html)
-    with open(os.path.join(out, 'style.css'), 'w', encoding='utf-8') as fh:
+    root = os.path.join(HERE, '..', 'agent_helper', 'docs')
+    for lang, sub in (('fa', ''), ('en', 'en')):
+        lib.LANG = lang
+        out = os.path.join(root, sub)
+        os.makedirs(out, exist_ok=True)
+        for slug, build in builders(lang).items():
+            with open(os.path.join(out, f'{slug}.html'), 'w', encoding='utf-8') as fh:
+                fh.write(build())
+        print('ok', lang, len(lib.PAGES), 'pages ->', os.path.normpath(out))
+    lib.LANG = 'fa'
+    with open(os.path.join(root, 'style.css'), 'w', encoding='utf-8') as fh:
         fh.write(lib.CSS)
-    print('ok', len(sizes), 'pages ->', os.path.normpath(out))
 
 
 main()

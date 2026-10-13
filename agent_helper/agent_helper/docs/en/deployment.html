@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deployment — agent-helper</title><meta name="description" content="Installing on an offline server, nginx, self-hosted models and installing on existing tables"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../deployment.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="on" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Operations</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Deployment</h1><p class="lead">Installing on an offline server, nginx, self-hosted models and installing on existing tables</p>
+<h2 id="checklist">Checklist<a class="anchor" href="#checklist">#</a></h2>
+<ul><li>Wheels and the <code>wheelhouse</code> on the server; <code>pip install --no-index --pre</code>.</li>
+<li><code>migrate</code>.</li><li>LLM, light-model and vision addresses in settings or environment variables.</li>
+<li>A shared cache (Redis) for rate limits across processes.</li><li>nginx: no buffering for the <code>chat/</code> path; read timeout ≥ 120 seconds.</li>
+<li>An ASGI/WSGI server with enough workers: each LLM conversation holds a worker until the stream ends.</li></ul>
+<div class="pre"><span class="lang"></span><button type="button" data-done="Copied">Copy</button><pre><code>location /api/assistant/chat/ {
+    proxy_pass http://app;
+    proxy_buffering off;
+    proxy_read_timeout 180s;
+}</code></pre></div>
+<h2 id="self-hosted-models">Self-hosted models<a class="anchor" href="#self-hosted-models">#</a></h2>
+<ul><li><b>LLM:</b> vLLM or any OpenAI-compatible server with tool calling; <code>LLM_PROVIDER='openai'</code>. Prefix caching makes the repeated prompt tokens cheap.</li>
+<li><b>Light model:</b> Jev (or any server with the same <code>/v1/systemone</code> contract) or a small model with logprobs (<code>INTENT_BACKEND='llm'</code>).</li>
+<li><b>Vision:</b> a VL model on the same server or a separate one (<code>VISION_*</code>).</li></ul>
+<p>After changing a model, re-run the routing evaluation and one full scenario per plugin.</p>
+<h2 id="installing-on-existing-tables-different-label">Installing on existing tables (different label)<a class="anchor" href="#installing-on-existing-tables-different-label">#</a></h2>
+<p>If the tables already exist from an earlier version under another app label (e.g. <code>assistant</code>), without changing the database:</p>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># myproject/agent_apps.py</span>
+<span class="tk-k">from</span> agent_helper.apps <span class="tk-k">import</span> AgentHelperConfig
+
+<span class="tk-k">class</span> AssistantConfig(AgentHelperConfig):
+    name = <span class="tk-s">&#x27;agent_helper&#x27;</span>
+    label = <span class="tk-s">&#x27;my_old_label&#x27;</span>      <span class="tk-c"># same tables, content types, permissions and admin URL names</span>
+
+<span class="tk-c"># settings.py</span>
+INSTALLED_APPS += [<span class="tk-s">&#x27;myproject.agent_apps.AssistantConfig&#x27;</span>]
+MIGRATION_MODULES = {<span class="tk-s">&#x27;my_old_label&#x27;</span>: <span class="tk-s">&#x27;myproject.old_migrations&#x27;</span>}   <span class="tk-c"># the existing migration history</span></code></pre></div><div class="adm warn"><b class="t">Manual migrations</b><p>In this setup <code>makemigrations</code> must only run for the old label. The package's own initial migration (<code>agent_helper/migrations</code>) is for fresh installs.</p></div>
+<h2 id="upgrading">Upgrading<a class="anchor" href="#upgrading">#</a></h2>
+<div class="pre"><span class="lang">Shell</span><button type="button" data-done="Copied">Copy</button><pre><code>pip install --no-index --find-links dist --pre --upgrade agent-helper
+python manage.py migrate
+python manage.py check</code></pre></div>
+<div class="pn"><a href="testing.html"><small>Previous</small>← Testing</a><a href="troubleshooting.html"><small>Next</small>Troubleshooting and FAQ →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#checklist">Checklist</a><a class="h2" href="#self-hosted-models">Self-hosted models</a><a class="h2" href="#installing-on-existing-tables-different-label">Installing on existing tables (different label)</a><a class="h2" href="#upgrading">Upgrading</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

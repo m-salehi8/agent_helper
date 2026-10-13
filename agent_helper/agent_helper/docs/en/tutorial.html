@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tutorial: zero to first chat — agent-helper</title><meta name="description" content="An empty project, a small plugin with one read-only tool and one pending action, and the first SSE request"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../tutorial.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="on" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Getting started</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Tutorial: zero to first chat</h1><p class="lead">An empty project, a small plugin with one read-only tool and one pending action, and the first SSE request</p>
+<p>In this tutorial we create an empty project and write a plugin called <code>notes</code> that reads the user's notes and
+<b>proposes</b> adding a note (saved only when the user presses the button). Very similar code ships in the <code>agent-helper-demo</code> package.</p>
+<h2 id="1-project-and-install">1. Project and install<a class="anchor" href="#1-project-and-install">#</a></h2>
+<div class="pre"><span class="lang">Shell</span><button type="button" data-done="Copied">Copy</button><pre><code>python -m venv venv &amp;&amp; . venv/bin/activate
+pip install --no-index --find-links wheelhouse --find-links dist --pre agent-helper
+django-admin startproject mysite . &amp;&amp; python manage.py startapp notes</code></pre></div>
+<h2 id="2-domain-model">2. Domain model<a class="anchor" href="#2-domain-model">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># notes/models.py</span>
+<span class="tk-k">from</span> django.conf <span class="tk-k">import</span> settings
+<span class="tk-k">from</span> django.db <span class="tk-k">import</span> models
+
+<span class="tk-k">class</span> Note(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name=<span class="tk-s">&#x27;notes&#x27;</span>)
+    text = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=<span class="tk-k">True</span>)</code></pre></div>
+<h2 id="3-the-plugin">3. The plugin<a class="anchor" href="#3-the-plugin">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># notes/plugin.py</span>
+<span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> actions
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> ActionKind, Plugin, PromptFragment, ToolSpec
+
+
+<span class="tk-k">def</span> list_my_notes(user, args, ctx):
+    <span class="tk-s">&quot;&quot;</span><span class="tk-s">&quot;Read-only; user is always request.user&quot;</span><span class="tk-s">&quot;&quot;</span>
+    <span class="tk-k">from</span> notes.models <span class="tk-k">import</span> Note
+    notes = Note.objects.filter(user=user).order_by(<span class="tk-s">&#x27;-id&#x27;</span>)[:10]
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;count&#x27;</span>: len(notes), <span class="tk-s">&#x27;notes&#x27;</span>: [{<span class="tk-s">&#x27;id&#x27;</span>: n.id, <span class="tk-s">&#x27;text&#x27;</span>: n.text} <span class="tk-k">for</span> n <span class="tk-k">in</span> notes]}
+
+
+<span class="tk-k">def</span> propose_add_note(user, args, ctx):
+    <span class="tk-s">&quot;&quot;</span><span class="tk-s">&quot;Proposal only; nothing is saved&quot;</span><span class="tk-s">&quot;&quot;</span>
+    text = str(args.get(<span class="tk-s">&#x27;text&#x27;</span>) <span class="tk-k">or</span> <span class="tk-s">&#x27;&#x27;</span>).strip()
+    <span class="tk-k">if</span> <span class="tk-k">not</span> text:
+        <span class="tk-k">return</span> {<span class="tk-s">&#x27;error&#x27;</span>: <span class="tk-s">&#x27;The note text is empty.&#x27;</span>}
+    action = ctx.propose(<span class="tk-s">&#x27;add_note&#x27;</span>, {<span class="tk-s">&#x27;text&#x27;</span>: text})
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;ready&#x27;</span>, <span class="tk-s">&#x27;action_id&#x27;</span>: action.id,
+            <span class="tk-s">&#x27;message&#x27;</span>: <span class="tk-s">&#x27;Draft is ready; the user must press the button. Do not say it was saved.&#x27;</span>}
+
+
+<span class="tk-k">def</span> execute_add_note(user, action, params):
+    <span class="tk-s">&quot;&quot;</span><span class="tk-s">&quot;Only from the confirm endpoint, inside a transaction and under a lock&quot;</span><span class="tk-s">&quot;&quot;</span>
+    <span class="tk-k">from</span> notes.models <span class="tk-k">import</span> Note
+    note = Note.objects.create(user=user, text=action.payload[<span class="tk-s">&#x27;text&#x27;</span>])
+    actions.audit(user, action, <span class="tk-s">&#x27;created&#x27;</span>, <span class="tk-s">&#x27;Note saved&#x27;</span>, node_id=note.id)
+    <span class="tk-k">return</span> {<span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;confirmed&#x27;</span>, <span class="tk-s">&#x27;message&#x27;</span>: <span class="tk-s">&#x27;Note saved.&#x27;</span>,
+            <span class="tk-s">&#x27;results&#x27;</span>: [{<span class="tk-s">&#x27;note_id&#x27;</span>: note.id, <span class="tk-s">&#x27;status&#x27;</span>: <span class="tk-s">&#x27;success&#x27;</span>}], <span class="tk-s">&#x27;status_code&#x27;</span>: 200}
+
+
+PLUGIN = Plugin(
+    name=<span class="tk-s">&#x27;notes&#x27;</span>,
+    tools=[
+        ToolSpec(<span class="tk-s">&#x27;list_my_notes&#x27;</span>, <span class="tk-s">&quot;List the user&#x27;s notes&quot;</span>,
+                 {<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;properties&#x27;</span>: {}}, list_my_notes,
+                 status=<span class="tk-s">&#x27;Reading notes...&#x27;</span>),
+        ToolSpec(<span class="tk-s">&#x27;propose_add_note&#x27;</span>, <span class="tk-s">&#x27;Draft a new note (does not save)&#x27;</span>,
+                 {<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;properties&#x27;</span>: {<span class="tk-s">&#x27;text&#x27;</span>: {<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;string&#x27;</span>}}, <span class="tk-s">&#x27;required&#x27;</span>: [<span class="tk-s">&#x27;text&#x27;</span>]},
+                 propose_add_note, read_only=<span class="tk-k">False</span>, proposes=<span class="tk-s">&#x27;add_note&#x27;</span>),
+    ],
+    actions=[ActionKind(<span class="tk-s">&#x27;add_note&#x27;</span>, execute=execute_add_note,
+                        preview=<span class="tk-k">lambda</span> p: {<span class="tk-s">&#x27;kind&#x27;</span>: <span class="tk-s">&#x27;add_note&#x27;</span>, <span class="tk-s">&#x27;text&#x27;</span>: p[<span class="tk-s">&#x27;text&#x27;</span>]},
+                        propose_schema={<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;object&#x27;</span>, <span class="tk-s">&#x27;required&#x27;</span>: [<span class="tk-s">&#x27;text&#x27;</span>]})],
+    prompt_fragments=[PromptFragment(
+        <span class="tk-s">&#x27;Notes: use list_my_notes to read and propose_add_note to add; never say it was saved.&#x27;</span>, order=60)],
+)</code></pre></div><div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># notes/apps.py</span>
+<span class="tk-k">from</span> django.apps <span class="tk-k">import</span> AppConfig
+
+<span class="tk-k">class</span> NotesConfig(AppConfig):
+    default_auto_field = <span class="tk-s">&#x27;django.db.models.BigAutoField&#x27;</span>
+    name = <span class="tk-s">&#x27;notes&#x27;</span>
+
+    <span class="tk-k">def</span> ready(self):
+        <span class="tk-k">import</span> agent_helper
+        <span class="tk-k">from</span> notes.plugin <span class="tk-k">import</span> PLUGIN
+        agent_helper.register(PLUGIN)</code></pre></div>
+<h2 id="4-settings-and-urls">4. Settings and URLs<a class="anchor" href="#4-settings-and-urls">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># mysite/settings.py</span>
+INSTALLED_APPS += [<span class="tk-s">&#x27;rest_framework&#x27;</span>, <span class="tk-s">&#x27;django_jalali&#x27;</span>, <span class="tk-s">&#x27;agent_helper&#x27;</span>, <span class="tk-s">&#x27;notes&#x27;</span>]
+
+AGENT_HELPER = {
+    <span class="tk-s">&#x27;LLM_PROVIDER&#x27;</span>: <span class="tk-s">&#x27;openai&#x27;</span>,
+    <span class="tk-s">&#x27;LLM_BASE_URL&#x27;</span>: <span class="tk-s">&#x27;http://127.0.0.1:8000/v1&#x27;</span>,
+    <span class="tk-s">&#x27;LLM_API_KEY&#x27;</span>: <span class="tk-s">&#x27;sk-local&#x27;</span>,
+    <span class="tk-s">&#x27;LLM_MODEL&#x27;</span>: <span class="tk-s">&#x27;qwen3&#x27;</span>,
+}
+
+REST_FRAMEWORK = {
+    <span class="tk-s">&#x27;DEFAULT_AUTHENTICATION_CLASSES&#x27;</span>: [<span class="tk-s">&#x27;rest_framework.authentication.SessionAuthentication&#x27;</span>],
+}</code></pre></div><div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># mysite/urls.py</span>
+<span class="tk-k">from</span> django.contrib <span class="tk-k">import</span> admin
+<span class="tk-k">from</span> django.urls <span class="tk-k">import</span> include, path
+
+urlpatterns = [
+    path(<span class="tk-s">&#x27;admin/&#x27;</span>, admin.site.urls),
+    path(<span class="tk-s">&#x27;api/assistant/&#x27;</span>, include(<span class="tk-s">&#x27;agent_helper.urls&#x27;</span>)),
+]</code></pre></div><div class="pre"><span class="lang">Shell</span><button type="button" data-done="Copied">Copy</button><pre><code>python manage.py makemigrations notes &amp;&amp; python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver</code></pre></div>
+<h2 id="5-first-chat">5. First chat<a class="anchor" href="#5-first-chat">#</a></h2>
+<p>As a logged-in user (or with a JWT token if your project uses JWT):</p>
+<div class="pre"><span class="lang">Shell</span><button type="button" data-done="Copied">Copy</button><pre><code>curl -N -X POST http://127.0.0.1:8000/api/assistant/chat/ \
+     -H &#x27;Content-Type: application/json&#x27; -H &#x27;Authorization: Bearer &lt;token&gt;&#x27; \
+     -d &#x27;{&quot;message&quot;: &quot;Note that I have a meeting tomorrow at 10&quot;}&#x27;</code></pre></div><div class="pre"><span class="lang"></span><button type="button" data-done="Copied">Copy</button><pre><code>data: {&quot;event&quot;: &quot;tool_status&quot;, &quot;status&quot;: &quot;Running tool propose_add_note...&quot;}
+
+data: {&quot;event&quot;: &quot;pending_action&quot;, &quot;action_id&quot;: 7, &quot;kind&quot;: &quot;add_note&quot;, &quot;text&quot;: &quot;Meeting tomorrow at 10&quot;, &quot;expires_at&quot;: &quot;1405/07/20 14:10&quot;}
+
+data: {&quot;event&quot;: &quot;token&quot;, &quot;text&quot;: &quot;Your note draft is ready; press confirm to save it.&quot;}
+
+data: {&quot;event&quot;: &quot;done&quot;, &quot;conversation_id&quot;: 3, &quot;message_id&quot;: 12, &quot;path&quot;: &quot;llm&quot;}</code></pre></div>
+<p>The user presses the button and the UI sends the confirmation:</p>
+<div class="pre"><span class="lang">Shell</span><button type="button" data-done="Copied">Copy</button><pre><code>curl -X POST http://127.0.0.1:8000/api/assistant/actions/7/confirm/ -H &#x27;Authorization: Bearer &lt;token&gt;&#x27;
+# {&quot;status&quot;: &quot;confirmed&quot;, &quot;message&quot;: &quot;Note saved.&quot;, &quot;results&quot;: [...]}</code></pre></div>
+<h2 id="6-tests">6. Tests<a class="anchor" href="#6-tests">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-c"># notes/tests.py</span>
+<span class="tk-k">from</span> django.test <span class="tk-k">import</span> TestCase
+<span class="tk-k">from</span> agent_helper.llm <span class="tk-k">import</span> LLMResponse, MockProvider, ToolCall, run_assistant_agent
+<span class="tk-k">from</span> agent_helper.models <span class="tk-k">import</span> AssistantConversation
+<span class="tk-k">from</span> agent_helper.registry <span class="tk-k">import</span> override
+<span class="tk-k">from</span> agent_helper.testing <span class="tk-k">import</span> fast_router, make_user
+<span class="tk-k">from</span> notes.plugin <span class="tk-k">import</span> PLUGIN
+
+
+<span class="tk-k">class</span> NotesTests(TestCase):
+    <span class="tk-k">def</span> test_propose_does_not_save(self):
+        user = make_user(<span class="tk-s">&#x27;u1&#x27;</span>)
+        conv = AssistantConversation.objects.create(user=user, title=<span class="tk-s">&#x27;t&#x27;</span>)
+        provider = MockProvider([
+            LLMResponse(tool_calls=[ToolCall(id=<span class="tk-s">&#x27;1&#x27;</span>, name=<span class="tk-s">&#x27;propose_add_note&#x27;</span>, arguments={<span class="tk-s">&#x27;text&#x27;</span>: <span class="tk-s">&#x27;hello&#x27;</span>})]),
+            LLMResponse(text=<span class="tk-s">&#x27;Press the button.&#x27;</span>),
+        ])
+        <span class="tk-k">with</span> override([PLUGIN]), fast_router(on=<span class="tk-k">False</span>):
+            events = list(run_assistant_agent(user, conv, <span class="tk-s">&#x27;note: hello&#x27;</span>, provider=provider))
+        self.assertTrue(any(e[<span class="tk-s">&#x27;event&#x27;</span>] == <span class="tk-s">&#x27;pending_action&#x27;</span> <span class="tk-k">for</span> e <span class="tk-k">in</span> events))
+        self.assertFalse(user.notes.exists())</code></pre></div>
+<div class="adm tip"><b class="t">What next?</b><p>The <a href="fast-routes.html">fast path</a> for frequent messages without the LLM, <a href="frontend.html">connecting a frontend</a> and <a href="deployment.html">deployment</a>.</p></div>
+<div class="pn"><a href="installation.html"><small>Previous</small>← Installation</a><a href="concepts.html"><small>Next</small>Concepts and architecture →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#1-project-and-install">1. Project and install</a><a class="h2" href="#2-domain-model">2. Domain model</a><a class="h2" href="#3-the-plugin">3. The plugin</a><a class="h2" href="#4-settings-and-urls">4. Settings and URLs</a><a class="h2" href="#5-first-chat">5. First chat</a><a class="h2" href="#6-tests">6. Tests</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

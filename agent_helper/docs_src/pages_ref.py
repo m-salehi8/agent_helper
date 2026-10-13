@@ -151,9 +151,9 @@ import json, requests
 
 with requests.post(url + '/api/assistant/chat/', json={'message': 'سلام'},
                    headers={'Authorization': 'Bearer ' + token}, stream=True) as r:
-    for line in r.iter_lines(decode_unicode=True):
-        if line.startswith('data: '):
-            print(json.loads(line[6:]))
+    for block in r.content.decode('utf-8').split('\\n\\n'):
+        if block.startswith('data: '):
+            print(json.loads(block[6:]))
 ''')
     return page('frontend', 'اتصال رابط کاربری', 'خواندن استریم SSE با fetch، کارت اقدام و نکته‌های استقرار', body)
 
@@ -162,6 +162,7 @@ def python_api():
     rows = [
         ('agent_helper', [
             ('register(plugin)', 'ثبت یک Plugin (در AppConfig.ready)'),
+            ('__version__', 'رشته‌ی نسخه‌ی پکیج (PEP 440، مثلاً 0.1.0b1)'),
         ]),
         ('agent_helper.plugins', [
             ('Plugin, ToolSpec, ActionKind, FastRoute, PromptFragment', 'قرارداد افزونه (صفحه‌های راهنما)'),
@@ -211,15 +212,19 @@ def python_api():
     body = ''
     for mod, items in rows:
         body += f'<h2><code>{mod}</code></h2>' + ''.join(sig(s) + (f'<p>{d}</p>' if d else '') for s, d in items)
-    body += adm('note', 'پایداری', '<p>قرارداد افزونه (<code>agent_helper.plugins</code>، <code>register</code>، <code>actions.audit</code>، <code>actions.create_pending</code>) API پایدار است. بقیه‌ی ماژول‌ها داخلی‌اند و ممکن است در نسخه‌های بعد تغییر کنند.</p>')
+    body += adm('note', 'پایداری', '<p>قرارداد افزونه (<code>agent_helper.plugins</code>، <code>register</code>، <code>actions.audit</code>، <code>actions.create_pending</code>) API عمومی موردنظر است؛ در دوره‌ی بتا هنوز ممکن است تغییر کند. بقیه‌ی ماژول‌ها داخلی‌اند و در هر نسخه ممکن است تغییر کنند.</p>')
     return page('python-api', 'مرجع پایتون', 'ماژول‌ها، توابع و کلاس‌های عمومی', body)
 
 
-def settings_ref():
+def conf_defaults():
     import ast, os
     src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'agent_helper', 'conf.py'), encoding='utf-8').read()
     node = next(n for n in ast.parse(src).body if isinstance(n, ast.Assign) and getattr(n.targets[0], 'id', '') == 'DEFAULTS')
-    defaults = eval(compile(ast.Expression(node.value), 'conf.py', 'eval'))  # literal dict (with arithmetic)
+    return eval(compile(ast.Expression(node.value), 'conf.py', 'eval'))  # literal dict (with arithmetic)
+
+
+def settings_ref():
+    defaults = conf_defaults()
     desc = {
         'LLM_PROVIDER': '<code>openai</code> (هر سرور سازگار) یا <code>anthropic</code>', 'LLM_BASE_URL': 'نشانی سرور LLM (بدون آن مسیر LLM خطا می‌دهد)',
         'LLM_API_KEY': 'کلید', 'LLM_MODEL': 'نام مدل', 'LLM_TIMEOUT': 'ثانیه', 'MAX_AGENT_ITERATIONS': 'حداکثر دور حلقه‌ی ابزار',

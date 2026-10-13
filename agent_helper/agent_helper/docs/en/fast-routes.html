@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fast path and Jev — agent-helper</title><meta name="description" content="Answers without the LLM for frequent messages; gates, main routes and catalogs"><link rel="stylesheet" href="../style.css"></head>
+<body><header class="top"><a class="brand" href="index.html">agent-helper</a><span class="ver">v0.1.0b1</span><span class="beta">beta</span><span class="sp"></span>
+<a class="lang" href="../fast-routes.html" hreflang="fa" lang="fa">فارسی</a>
+<input id="q" type="search" placeholder="Filter pages…"></header>
+<div class="wrap"><nav class="side"><h4>Getting started</h4><a class="" href="index.html">Introduction</a><a class="" href="installation.html">Installation</a><a class="" href="tutorial.html">Tutorial: zero to first chat</a><h4>Guide</h4><a class="" href="concepts.html">Concepts and architecture</a><a class="" href="configuration.html">Configuration</a><a class="" href="plugins.html">Writing a plugin</a><a class="" href="tools.html">Tools (ToolSpec)</a><a class="" href="actions.html">Pending actions (ActionKind)</a><a class="on" href="fast-routes.html">Fast path and Jev</a><a class="" href="prompts.html">Prompt and tool selection</a><a class="" href="attachments.html">Image attachments</a><h4>Reference</h4><a class="" href="http-api.html">HTTP API and SSE events</a><a class="" href="frontend.html">Connecting a frontend</a><a class="" href="python-api.html">Python reference</a><a class="" href="settings-ref.html">Settings reference</a><h4>Operations</h4><a class="" href="security.html">Security model</a><a class="" href="observability.html">Logs, admin and monitoring</a><a class="" href="testing.html">Testing</a><a class="" href="deployment.html">Deployment</a><a class="" href="troubleshooting.html">Troubleshooting and FAQ</a><a class="" href="changelog.html">Changelog</a></nav>
+<main><div class="crumb">Guide</div><div class="beta-banner" role="note"><b>Beta release (0.1.0b1).</b> This package is not a stable release yet; the API and settings may change before 1.0.</div><h1>Fast path and Jev</h1><p class="lead">Answers without the LLM for frequent messages; gates, main routes and catalogs</p>
+<p>Frequent, simple messages ("hi", "my orders", "how many leave days do I have?") do not need the LLM. The fast path decides
+with regexes and one light-model call and runs the tool directly — only when all signals are confident.</p>
+<div class="adm note"><b class="t">Turning it on</b><p><code>AGENT_HELPER['USE_FAST_ROUTER'] = '1'</code> (or <code>ASSISTANT_USE_FAST_ROUTER=1</code>). Off ⇒ every message goes to the LLM.</p></div>
+<h2 id="decision-order">Decision order<a class="anchor" href="#decision-order">#</a></h2>
+<ol>
+<li>The conversation is in a mode (<code>conversation.mode</code>) ⇒ LLM (reason: <code>&lt;mode&gt;_dialog</code>).</li>
+<li>Gate routes in <code>order</code>: if <code>guard(text)</code> is true ⇒ that route, without the light model.</li>
+<li>One light-model call with all questions (error or timeout ⇒ LLM with reason <code>classifier_error</code>).</li>
+<li>Yes/no gate questions: two confident gates ⇒ LLM (<code>a_or_b_ambiguous</code>); one ⇒ that route (unless <code>gate_veto</code>).</li>
+<li>Main routes in order with the light-model answers; none ⇒ LLM (<code>no_route</code>).</li></ol>
+<h2 id="fastroute">FastRoute<a class="anchor" href="#fastroute">#</a></h2>
+<div class="sig">FastRoute(name, handler=None, guard=None, gate_question=None, gate_veto=None, questions={}, tags=(), intent_tags={}, order=100)</div><table><thead><tr><th>Argument</th><th>Description</th></tr></thead><tbody><tr><td><code>name</code></td><td>Route name; its yes/no question is asked under the key <code>is_&lt;name&gt;</code></td></tr><tr><td><code>handler</code></td><td><code>handler(req: RouteRequest) -&gt; reply | Defer | None</code>; a gate without a handler means "always LLM"</td></tr><tr><td><code>guard</code></td><td><code>callable(text) -&gt; bool</code> cheap regex; on a match the route runs without the light model</td></tr><tr><td><code>gate_question</code></td><td>Jev yes/no question (<code>{"type": "noul", ...}</code>)</td></tr><tr><td><code>gate_veto</code></td><td><code>callable(text) -&gt; bool</code>; ignores a Jev "yes" for this text</td></tr><tr><td><code>questions</code></td><td>Choice questions of a main route (asked by both backends)</td></tr><tr><td><code>tags</code></td><td>Related tool/prompt tags (for tool selection on the LLM path)</td></tr><tr><td><code>intent_tags</code></td><td>Maps answers of the <code>intent</code> question to tags</td></tr><tr><td><code>order</code></td><td>Execution order (smaller first)</td></tr></tbody></table>
+<h2 id="routerequest">RouteRequest<a class="anchor" href="#routerequest">#</a></h2>
+<table><thead><tr><th>Member</th><th>Description</th></tr></thead><tbody><tr><td><code>user</code>, <code>conversation</code>, <code>text</code></td><td>Inputs</td></tr><tr><td><code>cls</code></td><td>Light-model answers: <code>{key: {"choice", "confidence", "p"?}}</code>; None when it came from a guard</td></tr><tr><td><code>threshold</code></td><td>Confidence threshold (<code>FAST_THRESHOLD</code>)</td></tr><tr><td><code>gate_p</code></td><td>Probability of "yes" per gate: <code>{route_name: p}</code></td></tr><tr><td><code>run_tool(name, args)</code></td><td>Runs a registered tool for this same user, with logging</td></tr><tr><td><code>reply(text, events=None)</code></td><td>Final reply; cards for created proposals are added automatically</td></tr></tbody></table>
+<p>Return <code>Defer('reason')</code> to hand over to the LLM; the reason is kept in the log (<code>fast_reason</code>).</p>
+<h2 id="example-a-gate-route-with-a-regex">Example: a gate route with a regex<a class="anchor" href="#example-a-gate-route-with-a-regex">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">import</span> re
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> FastRoute
+
+LEAVE = re.compile(r<span class="tk-s">&#x27;\bleave\b&#x27;</span>, re.I)
+ASK = re.compile(r<span class="tk-s">&#x27;how many|how much|left|remaining&#x27;</span>, re.I)
+
+<span class="tk-k">def</span> leave_route(req):
+    result = req.run_tool(<span class="tk-s">&#x27;get_leave_balance&#x27;</span>, {})
+    <span class="tk-k">return</span> req.reply(f<span class="tk-s">&#x27;You have {result[&quot;remaining_days&quot;]} leave days left.&#x27;</span>)
+
+ROUTE = FastRoute(name=<span class="tk-s">&#x27;leave&#x27;</span>, handler=leave_route, tags=(<span class="tk-s">&#x27;leave&#x27;</span>,),
+                  guard=<span class="tk-k">lambda</span> t: bool(LEAVE.search(t) <span class="tk-k">and</span> ASK.search(t)))</code></pre></div>
+<h2 id="example-a-main-route-with-an-intent-question">Example: a main route with an intent question<a class="anchor" href="#example-a-main-route-with-an-intent-question">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> Defer, FastRoute
+
+QUESTIONS = {
+    <span class="tk-s">&#x27;intent&#x27;</span>: {
+        <span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;choice&#x27;</span>,
+        <span class="tk-s">&#x27;instructions&#x27;</span>: <span class="tk-s">&#x27;The user writes to a shop assistant. What does the user want?&#x27;</span>,
+        <span class="tk-s">&#x27;criteria&#x27;</span>: {
+            <span class="tk-s">&#x27;list&#x27;</span>: <span class="tk-s">&#x27;List or filter their orders&#x27;</span>,
+            <span class="tk-s">&#x27;smalltalk&#x27;</span>: <span class="tk-s">&#x27;Greeting, thanks or help&#x27;</span>,
+            <span class="tk-s">&#x27;other&#x27;</span>: <span class="tk-s">&#x27;Anything else&#x27;</span>,
+        },
+    },
+}
+
+<span class="tk-k">def</span> orders_route(req):
+    intent = req.cls[<span class="tk-s">&#x27;intent&#x27;</span>]
+    <span class="tk-k">if</span> intent[<span class="tk-s">&#x27;confidence&#x27;</span>] &lt; req.threshold:
+        <span class="tk-k">return</span> Defer(<span class="tk-s">&#x27;low_intent_confidence&#x27;</span>)
+    <span class="tk-k">if</span> intent[<span class="tk-s">&#x27;choice&#x27;</span>] == <span class="tk-s">&#x27;smalltalk&#x27;</span>:
+        <span class="tk-k">return</span> req.reply(<span class="tk-s">&#x27;Hi! I can show you your orders.&#x27;</span>)
+    <span class="tk-k">if</span> intent[<span class="tk-s">&#x27;choice&#x27;</span>] == <span class="tk-s">&#x27;list&#x27;</span>:
+        result = req.run_tool(<span class="tk-s">&#x27;list_orders&#x27;</span>, {})
+        <span class="tk-k">return</span> req.reply(f<span class="tk-s">&#x27;You have {result[&quot;count&quot;]} orders.&#x27;</span>,
+                         [{<span class="tk-s">&#x27;event&#x27;</span>: <span class="tk-s">&#x27;order_list&#x27;</span>, <span class="tk-s">&#x27;items&#x27;</span>: result[<span class="tk-s">&#x27;orders&#x27;</span>]}])
+    <span class="tk-k">return</span> Defer(f<span class="tk-s">&#x27;intent_{intent[&quot;choice&quot;]}&#x27;</span>)
+
+ROUTE = FastRoute(name=<span class="tk-s">&#x27;orders&#x27;</span>, handler=orders_route, questions=QUESTIONS,
+                  intent_tags={<span class="tk-s">&#x27;list&#x27;</span>: (<span class="tk-s">&#x27;orders&#x27;</span>,)})</code></pre></div>
+<h2 id="example-a-gate-that-always-sends-to-the-llm">Example: a gate that always sends to the LLM<a class="anchor" href="#example-a-gate-that-always-sends-to-the-llm">#</a></h2>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code>CREATE = FastRoute(
+    name=<span class="tk-s">&#x27;create&#x27;</span>,                                <span class="tk-c"># log reason: create_request</span>
+    guard=<span class="tk-k">lambda</span> t: <span class="tk-s">&#x27;submit&#x27;</span> <span class="tk-k">in</span> t.lower(),
+    gate_question={<span class="tk-s">&#x27;type&#x27;</span>: <span class="tk-s">&#x27;noul&#x27;</span>, <span class="tk-s">&#x27;instructions&#x27;</span>: <span class="tk-s">&#x27;The user wants to submit a NEW request.&#x27;</span>,
+                   <span class="tk-s">&#x27;criteria&#x27;</span>: {<span class="tk-s">&#x27;true&#x27;</span>: <span class="tk-s">&#x27;Asks to create or register something new&#x27;</span>, <span class="tk-s">&#x27;false&#x27;</span>: <span class="tk-s">&#x27;Anything else&#x27;</span>}},
+    tags=(<span class="tk-s">&#x27;create&#x27;</span>,),
+    order=10,
+)</code></pre></div>
+<h2 id="catalogprovider">CatalogProvider<a class="anchor" href="#catalogprovider">#</a></h2>
+<p>If users refer to entities by name ("my last order", "the Samsung phone"), build a catalog so the core can give the light model
+a "which one?" question, with text matching as a fallback.</p>
+<div class="pre"><span class="lang">Python</span><button type="button" data-done="Copied">Copy</button><pre><code><span class="tk-k">from</span> agent_helper <span class="tk-k">import</span> nlu
+<span class="tk-k">from</span> agent_helper.plugins <span class="tk-k">import</span> CatalogEntry, CatalogProvider
+
+
+<span class="tk-k">class</span> ProductCatalog(CatalogProvider):
+    name = <span class="tk-s">&#x27;products&#x27;</span>
+    question_key = <span class="tk-s">&#x27;product&#x27;</span>                         <span class="tk-c"># answer key in req.cls</span>
+    instructions = <span class="tk-s">&#x27;Which product does the message refer to?&#x27;</span>
+    none_label = <span class="tk-s">&#x27;No specific product is mentioned&#x27;</span>
+
+    <span class="tk-k">def</span> entries(self):
+        <span class="tk-k">return</span> [CatalogEntry(key=str(p.id), title=p.title, aliases=tuple(p.aliases), description=p.summary, data=p)
+                <span class="tk-k">for</span> p <span class="tk-k">in</span> Product.objects.filter(active=<span class="tk-k">True</span>)]
+
+
+<span class="tk-k">def</span> my_route(req):
+    entry = nlu.resolve_catalog(ProductCatalog(), req.cls, req.text)   <span class="tk-c"># confident light-model answer, else text match</span>
+    ...</code></pre></div>
+<h2 id="light-model-backend">Light-model backend<a class="anchor" href="#light-model-backend">#</a></h2>
+<table><thead><tr><th>Backend</th><th>Questions</th><th>Settings</th></tr></thead><tbody><tr><td><code>jev</code> (default)</td><td>Main questions + gate yes/no + catalogs, in one <code>/v1/systemone</code> request</td><td><code>JEV_BASE_URL</code>, <code>JEV_API_KEY</code>, <code>JEV_MODEL</code></td></tr><tr><td><code>llm</code></td><td>Main questions only; each question is a single-letter choice with confidence from logprobs</td><td><code>INTENT_BASE_URL</code>, <code>INTENT_MODEL</code></td></tr></tbody></table><div class="adm warn"><b class="t">Amounts and numbers in code</b><p>The light model is not a calculator. Extract amounts, dates and ids with code (<code>agent_helper.fa.extract_amount</code> for Persian amounts). Send any constraint the fast path does not understand ("all except the first", a person's name) to the LLM so it is not silently ignored.</p></div>
+<div class="pn"><a href="actions.html"><small>Previous</small>← Pending actions (ActionKind)</a><a href="prompts.html"><small>Next</small>Prompt and tool selection →</a></div><footer>agent-helper 0.1.0b1 (beta) · package documentation</footer></main>
+<aside class="toc"><b>On this page</b><a class="h2" href="#decision-order">Decision order</a><a class="h2" href="#fastroute">FastRoute</a><a class="h2" href="#routerequest">RouteRequest</a><a class="h2" href="#example-a-gate-route-with-a-regex">Example: a gate route with a regex</a><a class="h2" href="#example-a-main-route-with-an-intent-question">Example: a main route with an intent question</a><a class="h2" href="#example-a-gate-that-always-sends-to-the-llm">Example: a gate that always sends to the LLM</a><a class="h2" href="#catalogprovider">CatalogProvider</a><a class="h2" href="#light-model-backend">Light-model backend</a></aside></div><script>
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+</script></body></html>

@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>مفاهیم و معماری — agent-helper</title><meta name="description" content="مسیر یک پیام، اجزای قرارداد افزونه، مدل‌های داده و وضعیت‌های اقدام"><link rel="stylesheet" href="style.css"></head>
-<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0</bdi></span><span class="sp"></span>
+<body><header class="top"><a class="brand" href="index.html"><bdi dir="ltr">agent-helper</bdi></a><span class="ver"><bdi dir="ltr">v0.1.0b1</bdi></span><span class="beta">بتا</span><span class="sp"></span>
+<a class="lang" href="en/concepts.html" hreflang="en" lang="en"><bdi dir="ltr">English</bdi></a>
 <input id="q" type="search" placeholder="جست‌وجو در فهرست…"></header>
 <div class="wrap"><nav class="side"><h4>شروع</h4><a class="" href="index.html">معرفی</a><a class="" href="installation.html">نصب</a><a class="" href="tutorial.html">آموزش: از صفر تا اولین گفتگو</a><h4>راهنما</h4><a class="on" href="concepts.html">مفاهیم و معماری</a><a class="" href="configuration.html">پیکربندی</a><a class="" href="plugins.html">نوشتن افزونه</a><a class="" href="tools.html">ابزارها (<bdi dir="ltr">ToolSpec</bdi>)</a><a class="" href="actions.html">اقدام معلق (<bdi dir="ltr">ActionKind</bdi>)</a><a class="" href="fast-routes.html">مسیر سریع و <bdi dir="ltr">Jev</bdi></a><a class="" href="prompts.html">پرامپت و انتخاب ابزار</a><a class="" href="attachments.html">پیوست تصویر</a><h4>مرجع</h4><a class="" href="http-api.html"><bdi dir="ltr">API</bdi> و رویدادهای <bdi dir="ltr">SSE</bdi></a><a class="" href="frontend.html">اتصال رابط کاربری</a><a class="" href="python-api.html">مرجع پایتون</a><a class="" href="settings-ref.html">مرجع تنظیمات</a><h4>عملیات</h4><a class="" href="security.html">مدل امنیتی</a><a class="" href="observability.html">لاگ، ادمین و پایش</a><a class="" href="testing.html">تست</a><a class="" href="deployment.html">استقرار</a><a class="" href="troubleshooting.html">عیب‌یابی و پرسش‌ها</a><a class="" href="changelog.html">تغییرات</a></nav>
-<main><div class="crumb">راهنما</div><h1>مفاهیم و معماری</h1><p class="lead">مسیر یک پیام، اجزای قرارداد افزونه، مدل‌های داده و وضعیت‌های اقدام</p>
+<main><div class="crumb">راهنما</div><div class="beta-banner" role="note"><b>نسخه‌ی بتا (0.1.0<bdi dir="ltr">b1</bdi>).</b> این پکیج هنوز به‌صورت پایدار منتشر نشده است؛ تا نسخه‌ی 1.0 ممکن است <bdi dir="ltr">API</bdi> و تنظیمات تغییر کنند.</div><h1>مفاهیم و معماری</h1><p class="lead">مسیر یک پیام، اجزای قرارداد افزونه، مدل‌های داده و وضعیت‌های اقدام</p>
 <h2 id="مسیر-یک-پیام">مسیر یک پیام<a class="anchor" href="#مسیر-یک-پیام">#</a></h2>
 <ol>
 <li><b>ورود:</b> <code>POST chat/</code> با کاربر احرازشده؛ سقف نرخ (دقیقه‌ای/روزانه)؛ ذخیره‌ی پیوست تصویر اگر هست.</li>
@@ -25,8 +26,8 @@
 <ul><li><b>هوش مصنوعی پیشنهاد می‌دهد، انسان اجرا می‌کند.</b></li><li><b>همه‌چیز در محدوده‌ی کاربر جاری.</b></li>
 <li><b>اول ارزان و سریع، بعد هوشمند؛</b> جواب غلط قطعی بدتر از جواب کند است.</li><li><b>قابل ردیابی:</b> هر تصمیم و فراخوانی لاگ می‌شود.</li></ul>
 
-<div class="pn"><a href="tutorial.html"><small>قبلی</small>→ آموزش: از صفر تا اولین گفتگو</a><a href="configuration.html"><small>بعدی</small>پیکربندی ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0 · مستندات پکیج</footer></main>
+<div class="pn"><a href="tutorial.html"><small>قبلی</small>→ آموزش: از صفر تا اولین گفتگو</a><a href="configuration.html"><small>بعدی</small>پیکربندی ←</a></div><footer><bdi dir="ltr">agent-helper</bdi> 0.1.0<bdi dir="ltr">b1</bdi> (<bdi dir="ltr">beta</bdi>) · مستندات پکیج</footer></main>
 <aside class="toc"><b>در این صفحه</b><a class="h2" href="#مسیر-یک-پیام">مسیر یک پیام</a><a class="h2" href="#اجزای-قرارداد-افزونه">اجزای قرارداد افزونه</a><a class="h2" href="#مدل-های-داده">مدل‌های داده</a><a class="h2" href="#وضعیت-های-اقدام-معلق">وضعیت‌های اقدام معلق</a><a class="h2" href="#اصول-طراحی">اصول طراحی</a></aside></div><script>
-document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent='کپی شد';setTimeout(()=>b.textContent='کپی',1200)})});
-const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
+document.querySelectorAll('.pre button').forEach(b=>b.onclick=()=>{const t=b.textContent;navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(()=>{b.textContent=b.dataset.done;setTimeout(()=>b.textContent=t,1200)})});
+const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('nav.side a').forEach(a=>{a.style.display=!v||a.textContent.toLowerCase().includes(v)||(a.dataset.k||'').includes(v)?'':'none'})})}
 </script></body></html>
